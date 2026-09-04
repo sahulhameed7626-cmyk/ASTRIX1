@@ -373,7 +373,7 @@
     "enabled": true,
     "time": "20:45",
     "time12": "08:45 PM",
-    "lastSentDate": "2026-09-04",
+    "lastSentDate": null,
     "targetChatId": "7032355691"
   }
 }

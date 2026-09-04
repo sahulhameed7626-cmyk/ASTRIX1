@@ -26,6 +26,20 @@ export default async function handler(req, res) {
   const proto = req.headers['x-forwarded-proto'] || 'https';
   const parsedUrl = new URL(req.url, `${proto}://${host}`);
 
+  // Reconstruct full pathname from Vercel catch-all param if needed
+  let pathname = parsedUrl.pathname;
+  if (req.query) {
+    const catchAll = req.query.all || req.query.path || req.query.slug || req.query.match;
+    if (catchAll) {
+      const segments = Array.isArray(catchAll) ? catchAll.join('/') : catchAll;
+      pathname = '/api/' + segments;
+    }
+  }
+  if (!pathname.startsWith('/api')) {
+    pathname = '/api' + (pathname.startsWith('/') ? pathname : '/' + pathname);
+  }
+  const routeUrl = new URL(pathname + parsedUrl.search, `${proto}://${host}`);
+
   // Parse body if needed
   let body = req.body;
   if (typeof body === 'string' && body.trim().length > 0) {
@@ -49,45 +63,45 @@ export default async function handler(req, res) {
 
   // Execute Route Handlers and check if response ended
   try {
-    handleNutritionRoutes(req, res, parsedUrl);
+    handleNutritionRoutes(req, res, routeUrl);
     if (res.writableEnded) return;
 
-    handleMealRoutes(req, res, parsedUrl, body);
+    handleMealRoutes(req, res, routeUrl, body);
     if (res.writableEnded) return;
 
-    handleWaterRoutes(req, res, parsedUrl, body);
+    handleWaterRoutes(req, res, routeUrl, body);
     if (res.writableEnded) return;
 
-    handleWorkoutRoutes(req, res, parsedUrl, body);
+    handleWorkoutRoutes(req, res, routeUrl, body);
     if (res.writableEnded) return;
 
-    handleSportsRoutes(req, res, parsedUrl, body);
+    handleSportsRoutes(req, res, routeUrl, body);
     if (res.writableEnded) return;
 
-    handleHistoryRoutes(req, res, parsedUrl);
+    handleHistoryRoutes(req, res, routeUrl);
     if (res.writableEnded) return;
 
-    handleAnalyticsRoutes(req, res, parsedUrl);
+    handleAnalyticsRoutes(req, res, routeUrl);
     if (res.writableEnded) return;
 
-    handleReminderRoutes(req, res, parsedUrl, body);
+    handleReminderRoutes(req, res, routeUrl, body);
     if (res.writableEnded) return;
 
-    handleSummaryRoutes(req, res, parsedUrl);
+    handleSummaryRoutes(req, res, routeUrl);
     if (res.writableEnded) return;
 
-    handleUserRoutes(req, res, parsedUrl, body);
+    handleUserRoutes(req, res, routeUrl, body);
     if (res.writableEnded) return;
 
-    handleResetRoutes(req, res, parsedUrl, body);
+    handleResetRoutes(req, res, routeUrl, body);
     if (res.writableEnded) return;
 
-    await handleTelegramRoutes(req, res, parsedUrl, body);
+    await handleTelegramRoutes(req, res, routeUrl, body);
     if (res.writableEnded) return;
 
     if (!res.writableEnded) {
       res.writeHead(404, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ error: `Route not found: ${req.method} ${parsedUrl.pathname}` }));
+      return res.end(JSON.stringify({ error: `Route not found: ${req.method} ${routeUrl.pathname}` }));
     }
   } catch (err) {
     if (!res.writableEnded) {
