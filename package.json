@@ -1,0 +1,14 @@
+{
+  "name": "fitsport-astrix",
+  "version": "1.0.0",
+  "description": "FitSport Athlete Tracking Platform",
+  "type": "module",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node backend/server.js",
+    "build": "echo 'Build complete'"
+  },
+  "keywords": ["fitness", "sports", "nutrition", "telegram"],
+  "author": "",
+  "license": "ISC"
+}
