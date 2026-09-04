@@ -215,6 +215,22 @@ class FitSportApp {
     if (viewId === "dashboard" || viewId === "fitness") {
       this.renderWeightComponents();
     }
+    if (viewId === "profile") {
+      this.renderProfileScreen();
+    }
+    if (viewId === "onboarding") {
+      this.currentOnboardingStep = 1;
+      if (typeof this.updateOnboardingStepUI === "function") {
+        this.updateOnboardingStepUI();
+      }
+      this.populateOnboardingForm();
+    }
+    if (viewId === "login") {
+      const loginName = document.getElementById("loginName");
+      if (loginName) loginName.value = appState.state.user.name || "Alex Mercer";
+      const loginPhone = document.getElementById("loginPhone");
+      if (loginPhone) loginPhone.value = (appState.state.user.phone || "").replace(/^\+91\s*/, "") || "9876543210";
+    }
     if (viewId === "analytics") {
       this.renderAnalyticsCharts();
     }
@@ -239,33 +255,43 @@ class FitSportApp {
       this.navigateTo("dashboard");
     });
 
-    document.querySelectorAll("[data-view]").forEach(elem => {
-      elem.addEventListener("click", (e) => {
-        const view = elem.getAttribute("data-view");
+    document.querySelectorAll(".nav-link").forEach(link => {
+      link.addEventListener("click", (e) => {
+        const view = link.getAttribute("data-view");
         if (view) {
-          e.preventDefault();
+          this.navigateTo(view);
+          const sidebar = document.querySelector(".app-sidebar");
+          sidebar?.classList.remove("open-sidebar");
+        }
+      });
+    });
+
+    document.querySelectorAll(".bottom-nav-item").forEach(link => {
+      link.addEventListener("click", () => {
+        const view = link.getAttribute("data-view");
+        if (view) {
           this.navigateTo(view);
         }
       });
     });
 
-    document.getElementById("mobileMenuToggle")?.addEventListener("click", () => {
-      const sidebar = document.getElementById("appSidebar");
-      if (sidebar) {
-        sidebar.style.display = sidebar.style.display === "flex" ? "none" : "flex";
-      }
+    document.getElementById("sidebarUserCard")?.addEventListener("click", () => {
+      this.navigateTo("profile");
     });
   }
 
   bindHeaderActions() {
-    document.getElementById("landingToggleBtn")?.addEventListener("click", () => {
+    const toggleLanding = () => {
       if (this.currentView === "landing") {
         this.navigateTo("dashboard");
-        document.getElementById("landingToggleBtn").textContent = "Landing Page";
       } else {
         this.navigateTo("landing");
-        document.getElementById("landingToggleBtn").textContent = "Back to App";
       }
+    };
+    document.getElementById("landingToggleBtn")?.addEventListener("click", toggleLanding);
+
+    document.getElementById("headerDailySummaryBtn")?.addEventListener("click", () => {
+      this.navigateTo("daily-summary");
     });
 
     document.getElementById("headerQuickLogBtn")?.addEventListener("click", () => {
@@ -279,21 +305,25 @@ class FitSportApp {
       this.navigateTo("dashboard");
     });
 
-    document.getElementById("loginSubmitBtn")?.addEventListener("click", () => {
+    document.getElementById("loginSubmitBtn")?.addEventListener("click", async () => {
+      const name = (document.getElementById("loginName")?.value || "").trim() || appState.state.user.name || "Alex Mercer";
       const rawPhone = (document.getElementById("loginPhone")?.value || "9876543210").trim();
       const phone = rawPhone.startsWith("+") ? rawPhone : `+91 ${rawPhone}`;
       const height = parseFloat(document.getElementById("loginHeight")?.value) || 178;
       const weight = parseFloat(document.getElementById("loginWeight")?.value) || 69.5;
       
-      appState.updateUserProfile({
+      await appState.updateUserProfile({
+        name,
         phone,
         height,
         currentWeight: weight
       });
 
-      this.showToast(`Signed in: ${phone} (${height}cm, ${weight}kg)`);
+      this.renderAllDynamicComponents();
+      this.showToast(`Signed in: ${name} (${phone})`);
       this.navigateTo("dashboard");
     });
+    
     document.getElementById("loginToOnboardingBtn")?.addEventListener("click", () => {
       this.navigateTo("onboarding");
     });
@@ -306,7 +336,7 @@ class FitSportApp {
   // 3. 5-Step Profile Setup Onboarding
   // --------------------------------------------------------------------------
   bindOnboarding() {
-    let currentStep = 1;
+    this.currentOnboardingStep = 1;
     const totalSteps = 5;
 
     // "Choose Everything" button in Step 5
@@ -325,31 +355,33 @@ class FitSportApp {
       this.showToast(!allChecked ? "Selected all fitness objectives" : "Cleared selection");
     });
 
-    const updateStepUI = () => {
-      document.getElementById("onboardingStepBadge").textContent = `Step ${currentStep} of ${totalSteps}`;
-      document.getElementById("onboardingProgressBar").style.width = `${(currentStep / totalSteps) * 100}%`;
+    this.updateOnboardingStepUI = () => {
+      const stepBadge = document.getElementById("onboardingStepBadge");
+      if (stepBadge) stepBadge.textContent = `Step ${this.currentOnboardingStep} of ${totalSteps}`;
+      const progBar = document.getElementById("onboardingProgressBar");
+      if (progBar) progBar.style.width = `${(this.currentOnboardingStep / totalSteps) * 100}%`;
 
       for (let i = 1; i <= totalSteps; i++) {
         const stepEl = document.getElementById(`onboardingStep${i}`);
-        if (stepEl) stepEl.style.display = i === currentStep ? "block" : "none";
+        if (stepEl) stepEl.style.display = i === this.currentOnboardingStep ? "block" : "none";
       }
 
       const prevBtn = document.getElementById("onboardingPrevBtn");
       const nextBtn = document.getElementById("onboardingNextBtn");
 
-      if (prevBtn) prevBtn.disabled = currentStep === 1;
+      if (prevBtn) prevBtn.disabled = this.currentOnboardingStep === 1;
       if (nextBtn) {
-        nextBtn.textContent = currentStep === totalSteps ? "Complete Setup" : "Next Step";
+        nextBtn.textContent = this.currentOnboardingStep === totalSteps ? "Complete Setup" : "Next Step";
       }
     };
 
-    document.getElementById("onboardingNextBtn")?.addEventListener("click", () => {
-      if (currentStep < totalSteps) {
-        currentStep++;
-        updateStepUI();
+    document.getElementById("onboardingNextBtn")?.addEventListener("click", async () => {
+      if (this.currentOnboardingStep < totalSteps) {
+        this.currentOnboardingStep++;
+        this.updateOnboardingStepUI();
       } else {
-        const name = document.getElementById("obName")?.value || "Alex Mercer";
-        const phone = document.getElementById("obPhone")?.value || "+91 98765 43210";
+        const name = (document.getElementById("obName")?.value || "").trim() || "Alex Mercer";
+        const phone = (document.getElementById("obPhone")?.value || "").trim() || "+91 98765 43210";
         const height = parseFloat(document.getElementById("obHeight")?.value) || 178;
         const currentW = parseFloat(document.getElementById("obCurrentWeight")?.value) || 69.5;
         const targetW = parseFloat(document.getElementById("obTargetWeight")?.value) || 65.0;
@@ -368,7 +400,7 @@ class FitSportApp {
 
         const selectedGoal = goalsChecked.length > 0 ? goalsChecked.join(", ") : "Improve Sports Performance";
 
-        appState.updateUserProfile({
+        await appState.updateUserProfile({
           name,
           phone,
           height,
@@ -379,17 +411,53 @@ class FitSportApp {
           fitnessGoal: selectedGoal
         });
 
-        this.showToast("Profile Setup Completed with All Chosen Goals!");
+        this.renderAllDynamicComponents();
+        this.showToast(`Profile Setup Completed for ${name}!`);
         this.navigateTo("dashboard");
       }
     });
 
     document.getElementById("onboardingPrevBtn")?.addEventListener("click", () => {
-      if (currentStep > 1) {
-        currentStep--;
-        updateStepUI();
+      if (this.currentOnboardingStep > 1) {
+        this.currentOnboardingStep--;
+        this.updateOnboardingStepUI();
       }
     });
+  }
+
+  populateOnboardingForm() {
+    const user = appState.state.user;
+    if (!user) return;
+
+    const obName = document.getElementById("obName");
+    if (obName) obName.value = user.name || "Alex Mercer";
+
+    const obPhone = document.getElementById("obPhone");
+    if (obPhone) obPhone.value = user.phone || "+91 98765 43210";
+
+    const obHeight = document.getElementById("obHeight");
+    if (obHeight) obHeight.value = user.height || 178;
+
+    const obCurW = document.getElementById("obCurrentWeight");
+    if (obCurW) obCurW.value = user.currentWeight || 69.5;
+
+    const obTgtW = document.getElementById("obTargetWeight");
+    if (obTgtW) obTgtW.value = user.targetWeight || 65.0;
+
+    const obDur = document.getElementById("obTargetDuration");
+    if (obDur) obDur.value = user.targetDurationMonths || 3;
+
+    if (Array.isArray(user.interestedSports)) {
+      document.querySelectorAll("#obSportsList input[type='checkbox']").forEach(cb => {
+        cb.checked = user.interestedSports.includes(cb.value);
+      });
+    }
+
+    if (user.fitnessGoal) {
+      document.querySelectorAll("#obGoalOptions input[type='checkbox']").forEach(cb => {
+        cb.checked = user.fitnessGoal.includes(cb.value);
+      });
+    }
   }
 
   // --------------------------------------------------------------------------
@@ -1934,16 +2002,103 @@ class FitSportApp {
   // --------------------------------------------------------------------------
   // 26. Profile & 27. Settings
   // --------------------------------------------------------------------------
+  openEditProfileModal() {
+    const user = appState.state.user || {};
+    const modal = document.getElementById("editProfileModal");
+    if (!modal) return;
+
+    const nameInput = document.getElementById("editProfName");
+    if (nameInput) nameInput.value = user.name || "Alex Mercer";
+
+    const phoneInput = document.getElementById("editProfPhone");
+    if (phoneInput) phoneInput.value = user.phone || "+91 98765 43210";
+
+    const heightInput = document.getElementById("editProfHeight");
+    if (heightInput) heightInput.value = user.height || 178;
+
+    const weightInput = document.getElementById("editProfCurrentWeight");
+    if (weightInput) weightInput.value = user.currentWeight || 69.5;
+
+    const targetWeightInput = document.getElementById("editProfTargetWeight");
+    if (targetWeightInput) targetWeightInput.value = user.targetWeight || 65.0;
+
+    const goalSelect = document.getElementById("editProfGoal");
+    if (goalSelect) {
+      const matchOpt = Array.from(goalSelect.options).find(opt => opt.value === user.fitnessGoal);
+      if (matchOpt) {
+        goalSelect.value = user.fitnessGoal;
+      } else {
+        goalSelect.value = "Improve Sports Performance";
+      }
+    }
+
+    modal.classList.add("open");
+  }
+
+  closeEditProfileModal() {
+    const modal = document.getElementById("editProfileModal");
+    if (modal) modal.classList.remove("open");
+  }
+
+  renderProfileScreen() {
+    this.renderAllDynamicComponents();
+  }
+
   bindProfileAndSettings() {
+    // Edit Profile Modal triggers
     document.getElementById("profileEditBtn")?.addEventListener("click", () => {
-      this.navigateTo("onboarding");
-    });
-    document.getElementById("profileUpdateGoalBtn")?.addEventListener("click", () => {
-      this.navigateTo("onboarding");
+      this.openEditProfileModal();
     });
 
     document.getElementById("manageAccountBtn")?.addEventListener("click", () => {
-      this.showToast("Account details are verified and linked.");
+      this.openEditProfileModal();
+    });
+
+    document.getElementById("closeEditProfileModalBtn")?.addEventListener("click", () => {
+      this.closeEditProfileModal();
+    });
+
+    document.getElementById("editProfileModal")?.addEventListener("click", (e) => {
+      if (e.target.id === "editProfileModal") {
+        this.closeEditProfileModal();
+      }
+    });
+
+    document.getElementById("editProfLaunchOnboardingBtn")?.addEventListener("click", () => {
+      this.closeEditProfileModal();
+      this.currentOnboardingStep = 1;
+      if (typeof this.updateOnboardingStepUI === "function") {
+        this.updateOnboardingStepUI();
+      }
+      this.populateOnboardingForm();
+      this.navigateTo("onboarding");
+    });
+
+    document.getElementById("saveEditProfileModalBtn")?.addEventListener("click", async () => {
+      const name = (document.getElementById("editProfName")?.value || "").trim() || "Alex Mercer";
+      const phone = (document.getElementById("editProfPhone")?.value || "").trim() || "+91 98765 43210";
+      const height = parseFloat(document.getElementById("editProfHeight")?.value) || 178;
+      const currentWeight = parseFloat(document.getElementById("editProfCurrentWeight")?.value) || 69.5;
+      const targetWeight = parseFloat(document.getElementById("editProfTargetWeight")?.value) || 65.0;
+      const fitnessGoal = document.getElementById("editProfGoal")?.value || "Improve Sports Performance";
+
+      await appState.updateUserProfile({
+        name,
+        phone,
+        height,
+        currentWeight,
+        targetWeight,
+        fitnessGoal
+      });
+
+      this.closeEditProfileModal();
+      this.renderAllDynamicComponents();
+      this.showToast(`Profile updated successfully for ${name}!`);
+    });
+
+    document.getElementById("profileUpdateGoalBtn")?.addEventListener("click", () => {
+      this.openEditProfileModal();
+      document.getElementById("editProfGoal")?.focus();
     });
 
     document.getElementById("testTelegramNotificationBtn")?.addEventListener("click", async () => {
@@ -1991,13 +2146,47 @@ class FitSportApp {
     const sidebarAvatar = document.getElementById("sidebarAvatar");
     if (sidebarAvatar) sidebarAvatar.textContent = user.avatar || "AM";
     const sidebarName = document.getElementById("sidebarUserName");
-    if (sidebarName) sidebarName.textContent = user.name;
+    if (sidebarName) sidebarName.textContent = user.name || "Alex Mercer";
+
+    const profAvatar = document.getElementById("profileAvatarLarge");
+    if (profAvatar) profAvatar.textContent = user.avatar || "AM";
+
+    const profName = document.getElementById("profileNameDisplay");
+    if (profName) profName.textContent = user.name || "Alex Mercer";
 
     const profPhone = document.getElementById("profilePhoneDisplay");
     if (profPhone) profPhone.textContent = user.phone || "+91 98765 43210";
 
+    const profGoalBadge = document.getElementById("profileGoalBadge");
+    if (profGoalBadge) profGoalBadge.textContent = user.fitnessGoal || "Improve Sports Performance";
+
+    const profHeight = document.getElementById("profHeight");
+    if (profHeight) profHeight.textContent = `${user.height || 178} cm`;
+
+    const profCurrentW = document.getElementById("profCurrentW");
+    if (profCurrentW) profCurrentW.textContent = `${user.currentWeight || 69.5} kg`;
+
+    const profTargetW = document.getElementById("profTargetW");
+    if (profTargetW) profTargetW.textContent = `${user.targetWeight || 65.0} kg`;
+
+    const profGoalText = document.getElementById("profGoalText");
+    if (profGoalText) profGoalText.textContent = user.fitnessGoal || "Improve Sports Performance";
+
+    const profSportsPills = document.getElementById("profSportsPills");
+    if (profSportsPills && Array.isArray(user.interestedSports)) {
+      profSportsPills.innerHTML = user.interestedSports
+        .map(sport => `<span class="badge-tag">${sport}</span>`)
+        .join(" ");
+    }
+
     const settingsPhone = document.getElementById("settingsAccountPhoneDisplay");
-    if (settingsPhone) settingsPhone.textContent = `${user.name} (${user.phone || "+91 98765 43210"})`;
+    if (settingsPhone) settingsPhone.textContent = `${user.name || "Alex Mercer"} (${user.phone || "+91 98765 43210"})`;
+
+    const summaryDate = document.getElementById("summaryDateLabel");
+    if (summaryDate) {
+      const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+      summaryDate.textContent = `${dateStr} • Athlete: ${user.name || "Alex Mercer"}`;
+    }
 
     const dCals = document.getElementById("dashValCaloriesConsumed");
     if (dCals) dCals.textContent = nut.calories.toLocaleString();

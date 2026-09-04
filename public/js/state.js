@@ -462,6 +462,14 @@ class StateManager {
   }
 
   async updateUserProfile(updatedFields) {
+    if (updatedFields.name && !updatedFields.avatar) {
+      const parts = updatedFields.name.trim().split(/\s+/).filter(Boolean);
+      const initials = parts.length === 1
+        ? parts[0].slice(0, 2).toUpperCase()
+        : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      updatedFields.avatar = initials || "AM";
+    }
+
     this.state.user = { ...this.state.user, ...updatedFields };
     if (updatedFields.currentWeight) {
       const todayEntry = this.state.weightHistory[this.state.weightHistory.length - 1];
@@ -470,11 +478,18 @@ class StateManager {
     this.saveState();
 
     try {
-      await fetch('/api/user', {
+      const res = await fetch('/api/user', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedFields)
       });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.user) {
+          this.state.user = { ...this.state.user, ...data.user };
+          this.saveState();
+        }
+      }
     } catch (e) {
       // fallback
     }

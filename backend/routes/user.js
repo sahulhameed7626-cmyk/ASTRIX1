@@ -14,6 +14,14 @@ export function handleUserRoutes(req, res, url, body) {
       ...body
     };
 
+    if (body.name && !body.avatar) {
+      const parts = body.name.trim().split(/\s+/).filter(Boolean);
+      const initials = parts.length === 1 
+        ? parts[0].slice(0, 2).toUpperCase() 
+        : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      db.store.user.avatar = initials || "AM";
+    }
+
     if (body.currentWeight) {
       db.store.user.currentWeight = parseFloat(body.currentWeight);
       const todayEntry = db.store.weightHistory[db.store.weightHistory.length - 1];
