@@ -216,6 +216,17 @@ class FitSportApp {
       this.renderWeightComponents();
       this.renderAllDynamicComponents();
     }
+    if (viewId === "sports") {
+      this.renderSportsDashboard();
+      this.renderSportsBenefitsMatrix();
+    }
+    if (viewId === "sport-details") {
+      const sportId = appState.state.selectedSportId || "cycling";
+      const detailMapContainer = document.getElementById("sDetailBodyMapContainer");
+      if (detailMapContainer) {
+        renderBodyMap(detailMapContainer, sportId, "front");
+      }
+    }
     if (viewId === "profile") {
       this.renderProfileScreen();
     }
@@ -278,6 +289,35 @@ class FitSportApp {
 
     document.getElementById("sidebarUserCard")?.addEventListener("click", () => {
       this.navigateTo("profile");
+    });
+
+    // Dashboard Hero Cards and Buttons Navigation
+    document.getElementById("dashFitnessCard")?.addEventListener("click", () => {
+      this.navigateTo("fitness");
+    });
+    document.getElementById("dashOpenFitnessBtn")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.navigateTo("fitness");
+    });
+
+    document.getElementById("dashSportsCard")?.addEventListener("click", () => {
+      this.navigateTo("sports");
+    });
+    document.getElementById("dashOpenSportsBtn")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.navigateTo("sports");
+    });
+
+    // Global delegated navigation for any [data-view] buttons
+    document.addEventListener("click", (e) => {
+      const target = e.target.closest("[data-view]");
+      if (target && !target.classList.contains("nav-link") && !target.classList.contains("bottom-nav-item") && !target.classList.contains("btn-toggle")) {
+        const view = target.getAttribute("data-view");
+        if (view && view !== "front" && view !== "back") {
+          e.preventDefault();
+          this.navigateTo(view);
+        }
+      }
     });
   }
 
@@ -1264,10 +1304,34 @@ class FitSportApp {
       `).join('');
     }
 
+    // Render interactive Anatomical Load Map for the selected sport directly in details
+    const detailMapContainer = document.getElementById("sDetailBodyMapContainer");
+    if (detailMapContainer) {
+      renderBodyMap(detailMapContainer, sportId, "front");
+    }
+
     this.navigateTo("sport-details");
   }
 
-  bindBodyMap() {}
+  bindBodyMap() {
+    const selector = document.getElementById("bodySportSelector");
+    if (selector) {
+      selector.addEventListener("change", (e) => {
+        appState.state.selectedSportId = e.target.value;
+        this.renderBodyAnalysisView();
+      });
+    }
+
+    document.getElementById("sportsViewBodyImpactBtn")?.addEventListener("click", () => {
+      this.navigateTo("body-analysis");
+    });
+    document.getElementById("sDetailBodyImpactBtn")?.addEventListener("click", () => {
+      this.navigateTo("body-analysis");
+    });
+    document.getElementById("sDetailFullBodyImpactBtn")?.addEventListener("click", () => {
+      this.navigateTo("body-analysis");
+    });
+  }
 
   renderBodyAnalysisView() {
     const container = document.getElementById("bodyMapContainer");

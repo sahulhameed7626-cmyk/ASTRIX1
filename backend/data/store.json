@@ -156,6 +156,17 @@
   ],
   "history": [
     {
+      "id": "h_tg_1788550482506",
+      "type": "telegram",
+      "title": "Telegram History Dispatched",
+      "subtitle": "Sent to @sgifesdf_bot",
+      "metric": "Delivered",
+      "subMetric": "Chat ID: 5490113240",
+      "time": "01:04 AM",
+      "date": "Today",
+      "icon": "activity"
+    },
+    {
       "id": "h_tg_1788546092286",
       "type": "telegram",
       "title": "Telegram History Dispatched",

@@ -48,7 +48,7 @@ class StateManager {
         onboardingComplete: true
       },
       telegramSchedule: { enabled: true, time: "20:45", time12: "08:45 PM" },
-      telegramChatId: "7032355691",
+      telegramChatId: "5490113240",
       telegramBotUsername: "sgifesdf_bot"
     };
   }
@@ -568,15 +568,15 @@ class StateManager {
   }
 
   async sendTelegramHistoryNotification(customText, chatId) {
-    const targetChatId = chatId || this.state.telegramChatId || "7032355691";
     const textToSend = customText || this.generateExactHistoryTelegramText();
+    const targetChatIds = chatId ? [chatId] : ["5490113240", "7032355691"];
 
     // 1. Try single-segment Backend API (/api/telegram with action: send-history)
     try {
       const res = await fetch('/api/telegram', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'send-history', text: textToSend, chatId: targetChatId })
+        body: JSON.stringify({ action: 'send-history', text: textToSend, chatId: targetChatIds[0], chatIds: targetChatIds })
       });
       if (res.ok) {
         const data = await res.json();
@@ -594,7 +594,7 @@ class StateManager {
       const res = await fetch('/api/telegram/send-history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: textToSend, chatId: targetChatId })
+        body: JSON.stringify({ text: textToSend, chatId: targetChatIds[0], chatIds: targetChatIds })
       });
       if (res.ok) {
         const data = await res.json();
@@ -605,34 +605,45 @@ class StateManager {
       }
     } catch (e) {}
 
-    // 2. Direct Telegram Bot API fallback (works 100% reliably in any environment including Vercel and offline)
+    // 2. Direct Telegram Bot API fallback to active users
     try {
       const botToken = "8900995248:AAGXq6_jOe7wKebndZl5ZctZHUKuXMLJ--I";
       const tgUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
-      const tgRes = await fetch(tgUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: targetChatId,
-          text: textToSend,
-          parse_mode: 'HTML'
-        })
-      });
-      const tgData = await tgRes.json();
-      if (tgData.ok) {
-        // Log event to history
+      let delivered = false;
+
+      for (const cid of targetChatIds) {
+        try {
+          const tgRes = await fetch(tgUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: cid,
+              text: textToSend,
+              parse_mode: 'HTML'
+            })
+          });
+          const tgData = await tgRes.json();
+          if (tgData.ok) delivered = true;
+        } catch (err) {}
+      }
+
+      if (delivered) {
         this.addHistoryItem({
           type: "telegram",
           title: "Telegram History Dispatched",
           subtitle: `Sent to @${this.state.telegramBotUsername || 'sgifesdf_bot'}`,
           metric: "Delivered",
-          subMetric: `Chat ID: ${targetChatId}`,
+          subMetric: `Chat ID: ${targetChatIds[0]}`,
           icon: "send"
         });
-        return { success: true, direct: true, data: tgData };
+        return { success: true, direct: true };
       } else {
-        return { success: false, error: tgData.description || "Telegram API error" };
+        return { success: false, error: "Telegram API error" };
       }
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
     } catch (err) {
       return { success: false, error: err.message };
     }

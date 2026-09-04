@@ -523,7 +523,7 @@
           <!-- TWO EQUAL PRIORITY FEATURE CARDS: FITNESS & SPORTS -->
           <div class="usp-split-grid">
             <!-- FITNESS CARD -->
-            <div class="usp-hero-card" id="dashFitnessCard">
+            <div class="usp-hero-card" id="dashFitnessCard" data-view="fitness" style="cursor: pointer;">
               <div>
                 <span class="usp-badge"><svg width="14" height="14"><use href="#icon-dumbbell"></use></svg> FITNESS</span>
                 <h2 class="usp-card-title">FITNESS</h2>
@@ -536,12 +536,12 @@
                 </div>
               </div>
               <div>
-                <button class="btn btn-primary btn-lg" data-view="fitness" style="width: 100%;">Open Fitness</button>
+                <button class="btn btn-primary btn-lg" data-view="fitness" id="dashOpenFitnessBtn" style="width: 100%;">Open Fitness</button>
               </div>
             </div>
 
             <!-- SPORTS CARD -->
-            <div class="usp-hero-card" id="dashSportsCard">
+            <div class="usp-hero-card" id="dashSportsCard" data-view="sports" style="cursor: pointer;">
               <div>
                 <span class="usp-badge"><svg width="14" height="14"><use href="#icon-activity"></use></svg> SPORTS</span>
                 <h2 class="usp-card-title">SPORTS</h2>
@@ -554,7 +554,7 @@
                 </div>
               </div>
               <div>
-                <button class="btn btn-primary btn-lg" data-view="sports" style="width: 100%;">Open Sports</button>
+                <button class="btn btn-primary btn-lg" data-view="sports" id="dashOpenSportsBtn" style="width: 100%;">Open Sports</button>
               </div>
             </div>
           </div>
@@ -1133,6 +1133,21 @@
                 <h4>Specific Conditioning Suggestions:</h4>
                 <div class="suggestions-grid" id="sDetailSuggestionsMount">
                   <!-- Rendered dynamically -->
+                </div>
+              </div>
+
+              <!-- Interactive Anatomical Load Map for Selected Sport -->
+              <div style="margin-top: 32px; border-top: 1px solid var(--border-subtle); padding-top: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                  <div>
+                    <span class="badge-sports">CORE USP • ANATOMICAL LOAD</span>
+                    <h3 class="card-title" style="margin-top: 4px;">Musculoskeletal Target Impact</h3>
+                    <p class="card-subtitle">Real-time biomechanical load distribution mapped to active muscle groups.</p>
+                  </div>
+                  <button type="button" class="btn btn-secondary btn-sm" id="sDetailFullBodyImpactBtn" data-view="body-analysis">Open Full Body Impact →</button>
+                </div>
+                <div id="sDetailBodyMapContainer" style="margin-top: 16px;">
+                  <!-- Rendered dynamically by renderBodyMap -->
                 </div>
               </div>
             </div>
