@@ -163,7 +163,11 @@ class FitSportApp {
 
     // Initial render
     this.renderAllDynamicComponents();
-    this.navigateTo("login");
+    if (appState.state.auth?.isLoggedIn) {
+      this.navigateTo("dashboard");
+    } else {
+      this.navigateTo("landing");
+    }
   }
 
   showToast(message) {
@@ -199,6 +203,18 @@ class FitSportApp {
     if (targetScreen) {
       targetScreen.classList.add("active-screen");
       window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // Dynamic Landing Toggle button in header
+    const landingToggleBtn = document.getElementById("landingToggleBtn");
+    if (landingToggleBtn) {
+      if (viewId === "landing") {
+        landingToggleBtn.textContent = "Open Dashboard →";
+        landingToggleBtn.setAttribute("data-view", "dashboard");
+      } else {
+        landingToggleBtn.textContent = "Landing Page";
+        landingToggleBtn.setAttribute("data-view", "landing");
+      }
     }
 
     // Update active nav links
@@ -264,7 +280,7 @@ class FitSportApp {
 
   bindNavigation() {
     document.getElementById("sidebarBrandClick")?.addEventListener("click", () => {
-      this.navigateTo("dashboard");
+      this.navigateTo("landing");
     });
 
     document.querySelectorAll(".nav-link").forEach(link => {
@@ -344,6 +360,9 @@ class FitSportApp {
     });
     document.getElementById("landingCtaExplore")?.addEventListener("click", () => {
       this.navigateTo("dashboard");
+    });
+    document.getElementById("landingCtaLogin")?.addEventListener("click", () => {
+      this.navigateTo("login");
     });
 
     document.getElementById("loginSubmitBtn")?.addEventListener("click", async () => {

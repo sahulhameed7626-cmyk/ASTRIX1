@@ -130,6 +130,10 @@
       </div>
 
       <nav class="sidebar-nav" id="sidebarNav" aria-label="Main Navigation">
+        <a class="nav-link" data-view="landing" id="nav-landing">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"></path></svg>
+          <span>Landing Page</span>
+        </a>
         <a class="nav-link active" data-view="dashboard" id="nav-dashboard">
           <svg><use href="#icon-home"></use></svg>
           <span>Dashboard</span>
@@ -238,8 +242,9 @@
               "One intelligent platform for your fitness journey, nutrition, workouts, and sports performance."
             </p>
             <div class="hero-cta-group">
-              <button class="btn btn-primary btn-lg" id="landingCtaStart">Start Your Journey</button>
-              <button class="btn btn-secondary btn-lg" id="landingCtaExplore">Explore FitSport</button>
+              <button class="btn btn-primary btn-lg" id="landingCtaStart" data-view="onboarding">Start Your Journey</button>
+              <button class="btn btn-secondary btn-lg" id="landingCtaExplore" data-view="dashboard">Explore FitSport</button>
+              <button class="btn btn-soft btn-lg" id="landingCtaLogin" data-view="login">Athlete Sign In</button>
             </div>
 
             <!-- Hero Visual Mockup Preview -->
@@ -288,27 +293,27 @@
               <h2 style="font-size: 2.2rem; margin: 12px 0 32px 0;">Everything You Need To Perform Better</h2>
               
               <div class="feature-cards-quad">
-                <div class="card" style="text-align: left;">
+                <div class="card" data-view="fitness" style="text-align: left; cursor: pointer;">
                   <div class="metric-icon-box" style="margin-bottom: 16px;"><svg><use href="#icon-dumbbell"></use></svg></div>
-                  <h3 class="card-title" style="color: var(--green-primary);">FITNESS</h3>
+                  <h3 class="card-title" style="color: var(--green-primary);">FITNESS →</h3>
                   <p class="card-subtitle" style="font-size: 0.95rem; margin-top: 8px;">"Build a stronger, healthier body with progressive workouts and target weight tracking."</p>
                 </div>
 
-                <div class="card" style="text-align: left;">
+                <div class="card" data-view="sports" style="text-align: left; cursor: pointer;">
                   <div class="metric-icon-box" style="margin-bottom: 16px;"><svg><use href="#icon-activity"></use></svg></div>
-                  <h3 class="card-title" style="color: var(--green-primary);">SPORTS</h3>
+                  <h3 class="card-title" style="color: var(--green-primary);">SPORTS →</h3>
                   <p class="card-subtitle" style="font-size: 0.95rem; margin-top: 8px;">"Turn fitness into performance. Track sport intensity, duration, and musculoskeletal impact."</p>
                 </div>
 
-                <div class="card" style="text-align: left;">
+                <div class="card" data-view="nutrition" style="text-align: left; cursor: pointer;">
                   <div class="metric-icon-box" style="margin-bottom: 16px;"><svg><use href="#icon-apple"></use></svg></div>
-                  <h3 class="card-title" style="color: var(--green-primary);">NUTRITION</h3>
+                  <h3 class="card-title" style="color: var(--green-primary);">NUTRITION →</h3>
                   <p class="card-subtitle" style="font-size: 0.95rem; margin-top: 8px;">"Understand what you eat. Log authentic whole foods, protein, iron, and water balance."</p>
                 </div>
 
-                <div class="card" style="text-align: left;">
+                <div class="card" data-view="analytics" style="text-align: left; cursor: pointer;">
                   <div class="metric-icon-box" style="margin-bottom: 16px;"><svg><use href="#icon-chart"></use></svg></div>
-                  <h3 class="card-title" style="color: var(--green-primary);">ANALYTICS</h3>
+                  <h3 class="card-title" style="color: var(--green-primary);">ANALYTICS →</h3>
                   <p class="card-subtitle" style="font-size: 0.95rem; margin-top: 8px;">"See your progress clearly through united fitness and sports history, and share via Telegram."</p>
                 </div>
               </div>
@@ -359,7 +364,7 @@
             </div>
             <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px; align-items: center;">
               <button class="btn btn-secondary btn-sm" id="loginToOnboardingBtn" style="width: 100%;">Setup New Profile (5 Steps)</button>
-              <button type="button" id="loginToLandingBtn" style="color: var(--text-secondary); font-size: 0.85rem; background: none; border: none; cursor: pointer; text-decoration: underline; margin-top: 4px;">Explore FitSport Landing Page</button>
+              <button type="button" id="loginToLandingBtn" data-view="landing" style="color: var(--text-secondary); font-size: 0.85rem; background: none; border: none; cursor: pointer; text-decoration: underline; margin-top: 4px;">Explore FitSport Landing Page</button>
             </div>
           </div>
         </section>

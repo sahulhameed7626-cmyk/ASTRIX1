@@ -644,10 +644,6 @@ class StateManager {
       return { success: false, error: err.message };
     }
   }
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  }
 
   async getTelegramUpdates() {
     try {
