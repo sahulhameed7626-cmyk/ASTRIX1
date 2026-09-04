@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node backend/server.js",
-    "dev": "node backend/server.js",
-    "build": "echo 'Build complete'"
+    "dev": "node backend/server.js"
   },
   "keywords": ["fitness", "sports", "nutrition", "telegram"],
   "author": "",

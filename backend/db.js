@@ -5,8 +5,13 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-function resolveDataFilePath(filename) {
+// Explicit URL references for @vercel/nft automatic bundling
+const STORE_URL = new URL('./data/store.json', import.meta.url);
+const NUTRITION_DATASET_URL = new URL('./data/nutritionDataset.json', import.meta.url);
+
+function resolveDataFilePath(filename, fallbackUrl) {
   const candidates = [
+    fallbackUrl,
     path.join(__dirname, 'data', filename),
     path.join(process.cwd(), 'backend', 'data', filename),
     path.join(process.cwd(), 'data', filename),
@@ -14,13 +19,15 @@ function resolveDataFilePath(filename) {
     path.resolve(__dirname, '..', 'data', filename)
   ];
   for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) return candidate;
+    try {
+      if (fs.existsSync(candidate)) return candidate;
+    } catch {}
   }
-  return path.join(__dirname, 'data', filename);
+  return fallbackUrl;
 }
 
-const STORE_PATH = resolveDataFilePath('store.json');
-const NUTRITION_DATASET_PATH = resolveDataFilePath('nutritionDataset.json');
+const STORE_PATH = resolveDataFilePath('store.json', STORE_URL);
+const NUTRITION_DATASET_PATH = resolveDataFilePath('nutritionDataset.json', NUTRITION_DATASET_URL);
 
 // Load raw nutrition dataset
 let nutritionDataset = [];
