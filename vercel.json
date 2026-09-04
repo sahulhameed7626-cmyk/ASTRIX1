@@ -2,7 +2,7 @@
   "version": 2,
   "cleanUrls": true,
   "functions": {
-    "api/*.js": {
+    "api/index.js": {
       "includeFiles": "backend/data/**"
     }
   },
@@ -10,6 +10,10 @@
     {
       "source": "/api/(.*)",
       "destination": "/api/index.js"
+    },
+    {
+      "source": "/((?!api/|css/|js/|backend/).*)",
+      "destination": "/index.html"
     }
   ]
 }
