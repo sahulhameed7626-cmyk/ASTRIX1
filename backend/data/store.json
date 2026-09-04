@@ -1,0 +1,379 @@
+{
+  "user": {
+    "id": "user_alex_mercer",
+    "name": "Alex Mercer",
+    "phone": "+91 9876543210",
+    "avatar": "AM",
+    "height": 178,
+    "currentWeight": 69.5,
+    "startingWeight": 72,
+    "targetWeight": 65,
+    "targetDurationMonths": 3,
+    "interestedSports": [
+      "Cycling",
+      "Football",
+      "Badminton",
+      "Running"
+    ],
+    "fitnessGoal": "Improve Sports Performance",
+    "calorieGoal": 2200,
+    "proteinGoal": 120,
+    "carbsGoal": 250,
+    "fatGoal": 65,
+    "waterGoal": 3500,
+    "ironGoal": 18,
+    "fiberGoal": 35
+  },
+  "meals": {
+    "breakfast": [],
+    "lunch": [],
+    "dinner": [],
+    "snacks": []
+  },
+  "waterLogs": [
+    {
+      "id": "w_1788533571294",
+      "time": "08:22 PM",
+      "amount": 500
+    },
+    {
+      "id": "w_1788533572094",
+      "time": "08:22 PM",
+      "amount": 500
+    },
+    {
+      "id": "w_1788533575269",
+      "time": "08:22 PM",
+      "amount": 500
+    }
+  ],
+  "workouts": [
+    {
+      "id": "wk_1",
+      "title": "Leg Strength Foundations",
+      "category": "Equipment Workouts",
+      "subCategory": "Beginner",
+      "duration": 30,
+      "caloriesBurned": 220,
+      "completedAt": "05:30 PM"
+    },
+    {
+      "id": "wk_1788533521973",
+      "workoutId": "hw-adv",
+      "title": "HIIT Athletic Burn",
+      "category": "Home Workouts",
+      "subCategory": "Advanced",
+      "duration": 1,
+      "caloriesBurned": 280,
+      "completedAt": "08:22 PM"
+    },
+    {
+      "id": "wk_1788533542168",
+      "workoutId": "eq-adv",
+      "title": "Upper Body Athletic Power",
+      "category": "Equipment Workouts",
+      "subCategory": "Advanced",
+      "duration": 1,
+      "caloriesBurned": 310,
+      "completedAt": "08:22 PM"
+    }
+  ],
+  "sportsActivities": [
+    {
+      "id": "sp_1",
+      "sportId": "cycling",
+      "sportName": "Cycling",
+      "duration": 45,
+      "intensity": "Moderate",
+      "caloriesBurned": 380,
+      "completedAt": "07:00 PM"
+    },
+    {
+      "id": "sp_1788533531094",
+      "sportId": "cycling",
+      "sportName": "Cycling",
+      "duration": 45,
+      "intensity": "Moderate",
+      "caloriesBurned": 378,
+      "completedAt": "08:22 PM"
+    }
+  ],
+  "reminders": [
+    {
+      "id": "r1",
+      "title": "Breakfast",
+      "time": "08:30 PM",
+      "repeat": "Everyday",
+      "type": "meal",
+      "icon": "apple",
+      "active": true
+    },
+    {
+      "id": "r2",
+      "title": "Lunch",
+      "time": "08:47 PM",
+      "repeat": "Everyday",
+      "type": "meal",
+      "icon": "apple",
+      "active": true
+    },
+    {
+      "id": "r3",
+      "title": "Water Hydration",
+      "time": "Every 2 Hours",
+      "repeat": "08:00 AM - 09:00 PM",
+      "type": "water",
+      "icon": "droplet",
+      "active": true
+    },
+    {
+      "id": "r4",
+      "title": "Workout",
+      "time": "06:00 PM",
+      "repeat": "Mon, Wed, Fri, Sat",
+      "type": "workout",
+      "icon": "dumbbell",
+      "active": true
+    },
+    {
+      "id": "r5",
+      "title": "Sports Session",
+      "time": "07:00 PM",
+      "repeat": "Tue, Thu, Sun",
+      "type": "sport",
+      "icon": "activity",
+      "active": true
+    },
+    {
+      "id": "r_1788534516852",
+      "title": "Pre-Workout Fuel",
+      "time": "08:00 AM",
+      "repeat": "Tue, Thu, Sun",
+      "type": "custom",
+      "icon": "bell",
+      "active": true
+    }
+  ],
+  "history": [
+    {
+      "id": "h_tg_auto_1788534619136",
+      "type": "telegram",
+      "title": "Automated Daily History Sent to Telegram",
+      "subtitle": "Scheduled delivery at 08:40 PM",
+      "metric": "Delivered",
+      "subMetric": "@sgifesdf_bot",
+      "time": "08:40 PM",
+      "date": "Today",
+      "icon": "clock"
+    },
+    {
+      "id": "h_tg_test_1788534062905",
+      "type": "telegram",
+      "title": "Telegram Automated Schedule Test Sent",
+      "subtitle": "Target: @sgifesdf_bot",
+      "metric": "Delivered",
+      "subMetric": "Chat ID: 7032355691",
+      "time": "08:31 PM",
+      "date": "Today",
+      "icon": "clock"
+    },
+    {
+      "id": "h_tg_1788533595689",
+      "type": "telegram",
+      "title": "Telegram History Dispatched",
+      "subtitle": "Sent to @sgifesdf_bot",
+      "metric": "Delivered",
+      "subMetric": "Chat ID: 7032355691",
+      "time": "08:23 PM",
+      "date": "Today",
+      "icon": "activity"
+    },
+    {
+      "id": "h_1788533575269",
+      "type": "water",
+      "title": "Hydration Check-in",
+      "subtitle": "Logged +500 ml fluid intake",
+      "metric": "+500 ml",
+      "subMetric": "Total today: 1.50 L",
+      "time": "08:22 PM",
+      "date": "Today",
+      "icon": "droplet"
+    },
+    {
+      "id": "h_1788533572094",
+      "type": "water",
+      "title": "Hydration Check-in",
+      "subtitle": "Logged +500 ml fluid intake",
+      "metric": "+500 ml",
+      "subMetric": "Total today: 1.00 L",
+      "time": "08:22 PM",
+      "date": "Today",
+      "icon": "droplet"
+    },
+    {
+      "id": "h_1788533571294",
+      "type": "water",
+      "title": "Hydration Check-in",
+      "subtitle": "Logged +500 ml fluid intake",
+      "metric": "+500 ml",
+      "subMetric": "Total today: 0.50 L",
+      "time": "08:22 PM",
+      "date": "Today",
+      "icon": "droplet"
+    },
+    {
+      "id": "h_1788533566055",
+      "type": "meals",
+      "title": "Snacks: Pineapple",
+      "subtitle": "50g • Logged to meal tracker",
+      "metric": "25 kcal",
+      "subMetric": "0.3g Protein • 0.7g Fiber",
+      "time": "08:22 PM",
+      "date": "Today",
+      "icon": "apple"
+    },
+    {
+      "id": "h_1788533565180",
+      "type": "meals",
+      "title": "Snacks: Mango",
+      "subtitle": "50g • Logged to meal tracker",
+      "metric": "30 kcal",
+      "subMetric": "0.4g Protein • 0.8g Fiber",
+      "time": "08:22 PM",
+      "date": "Today",
+      "icon": "apple"
+    },
+    {
+      "id": "h_1788533562013",
+      "type": "meals",
+      "title": "Lunch: Grapes",
+      "subtitle": "50g • Logged to meal tracker",
+      "metric": "34.5 kcal",
+      "subMetric": "0.4g Protein • 0.5g Fiber",
+      "time": "08:22 PM",
+      "date": "Today",
+      "icon": "apple"
+    },
+    {
+      "id": "h_1788533561100",
+      "type": "meals",
+      "title": "Lunch: Orange",
+      "subtitle": "50g • Logged to meal tracker",
+      "metric": "23.5 kcal",
+      "subMetric": "0.5g Protein • 1.2g Fiber",
+      "time": "08:22 PM",
+      "date": "Today",
+      "icon": "apple"
+    },
+    {
+      "id": "h_1788533560106",
+      "type": "meals",
+      "title": "Lunch: Banana",
+      "subtitle": "50g • Logged to meal tracker",
+      "metric": "44.5 kcal",
+      "subMetric": "0.6g Protein • 1.3g Fiber",
+      "time": "08:22 PM",
+      "date": "Today",
+      "icon": "apple"
+    },
+    {
+      "id": "h_1788533556560",
+      "type": "meals",
+      "title": "Breakfast: Orange",
+      "subtitle": "50g • Logged to meal tracker",
+      "metric": "23.5 kcal",
+      "subMetric": "0.5g Protein • 1.2g Fiber",
+      "time": "08:22 PM",
+      "date": "Today",
+      "icon": "apple"
+    },
+    {
+      "id": "h_1788533555683",
+      "type": "meals",
+      "title": "Breakfast: Banana",
+      "subtitle": "50g • Logged to meal tracker",
+      "metric": "44.5 kcal",
+      "subMetric": "0.6g Protein • 1.3g Fiber",
+      "time": "08:22 PM",
+      "date": "Today",
+      "icon": "apple"
+    },
+    {
+      "id": "h_1788533554631",
+      "type": "meals",
+      "title": "Breakfast: Apple",
+      "subtitle": "50g • Logged to meal tracker",
+      "metric": "26 kcal",
+      "subMetric": "0.2g Protein • 1.2g Fiber",
+      "time": "08:22 PM",
+      "date": "Today",
+      "icon": "apple"
+    },
+    {
+      "id": "h_1788533542168",
+      "type": "workouts",
+      "title": "Workout: Upper Body Athletic Power",
+      "subtitle": "Equipment Workouts (Advanced) completed",
+      "metric": "310 kcal burned",
+      "subMetric": "Duration: 1 min • Completed",
+      "time": "08:22 PM",
+      "date": "Today",
+      "icon": "dumbbell"
+    },
+    {
+      "id": "h_1788533531094",
+      "type": "sports",
+      "title": "Sport: Cycling",
+      "subtitle": "Moderate intensity session logged",
+      "metric": "378 kcal burned",
+      "subMetric": "Duration: 45 min",
+      "time": "08:22 PM",
+      "date": "Today",
+      "icon": "bike"
+    },
+    {
+      "id": "h_1788533521973",
+      "type": "workouts",
+      "title": "Workout: HIIT Athletic Burn",
+      "subtitle": "Home Workouts (Advanced) completed",
+      "metric": "280 kcal burned",
+      "subMetric": "Duration: 1 min • Completed",
+      "time": "08:22 PM",
+      "date": "Today",
+      "icon": "dumbbell"
+    }
+  ],
+  "weightHistory": [
+    {
+      "date": "Week 1",
+      "weight": 72
+    },
+    {
+      "date": "Week 2",
+      "weight": 71.4
+    },
+    {
+      "date": "Week 3",
+      "weight": 70.8
+    },
+    {
+      "date": "Week 4",
+      "weight": 70.2
+    },
+    {
+      "date": "Week 5",
+      "weight": 69.8
+    },
+    {
+      "date": "Week 6 (Today)",
+      "weight": 69.5
+    }
+  ],
+  "telegramSchedule": {
+    "enabled": true,
+    "time": "20:45",
+    "time12": "08:45 PM",
+    "lastSentDate": "2026-09-04",
+    "targetChatId": "7032355691"
+  }
+}
