@@ -8,12 +8,8 @@
   },
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/((?!api/|css/|js/|backend/).*)",
-      "destination": "/index.html"
+      "source": "/api/:match*",
+      "destination": "/api"
     }
   ]
 }
