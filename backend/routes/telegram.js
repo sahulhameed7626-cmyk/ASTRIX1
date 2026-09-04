@@ -184,8 +184,10 @@ export function startTelegramScheduler() {
   }, 20000); // checks every 20 seconds
 }
 
-// Start scheduler immediately on load
-startTelegramScheduler();
+// Start scheduler when running as server daemon (skip in serverless environments)
+if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  startTelegramScheduler();
+}
 
 export function handleTelegramRoutes(req, res, url, body) {
   // GET /api/telegram/config

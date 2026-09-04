@@ -5,15 +5,29 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const STORE_PATH = path.join(__dirname, 'data', 'store.json');
-const NUTRITION_DATASET_PATH = path.join(__dirname, 'data', 'nutritionDataset.json');
+function resolveDataFilePath(filename) {
+  const candidates = [
+    path.join(__dirname, 'data', filename),
+    path.join(process.cwd(), 'backend', 'data', filename),
+    path.join(process.cwd(), 'data', filename),
+    path.resolve(__dirname, '..', 'backend', 'data', filename),
+    path.resolve(__dirname, '..', 'data', filename)
+  ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  return path.join(__dirname, 'data', filename);
+}
+
+const STORE_PATH = resolveDataFilePath('store.json');
+const NUTRITION_DATASET_PATH = resolveDataFilePath('nutritionDataset.json');
 
 // Load raw nutrition dataset
 let nutritionDataset = [];
 try {
   nutritionDataset = JSON.parse(fs.readFileSync(NUTRITION_DATASET_PATH, 'utf-8'));
 } catch (err) {
-  console.error("Failed to load nutrition dataset:", err);
+  console.warn("Could not load nutrition dataset from file, fallback to empty array:", err.message);
 }
 
 const DEFAULT_STORE = {
