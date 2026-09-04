@@ -1561,6 +1561,36 @@ class FitSportApp {
           this.triggerAlarmRing(r);
         }
       });
+
+      // Check Telegram Scheduled Auto-Dispatch & Alert
+      const tgSchedule = appState.state.telegramSchedule;
+      if (tgSchedule && tgSchedule.enabled !== false) {
+        const match = (tgSchedule.time12 || "").match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+        if (match) {
+          const tgHour = match[1].padStart(2, '0');
+          const tgMin = match[2].padStart(2, '0');
+          const tgAmpm = match[3].toUpperCase();
+          const normalizedTgTime = `${tgHour}:${tgMin} ${tgAmpm}`;
+          const tgTriggerKey = `${todayDateStr}_${normalizedTgTime}_telegram`;
+
+          if (normalizedTgTime === currentTime12 && !this.triggeredMinutes.has(tgTriggerKey)) {
+            this.triggeredMinutes.add(tgTriggerKey);
+            console.log(`[FitSport] ⏰ TRIGGERING AUTOMATIC TELEGRAM DISPATCH AT ${normalizedTgTime}!`);
+            appState.sendTelegramHistoryNotification().then(res => {
+              if (res && res.success) {
+                this.showToast(`⏰ Scheduled Daily History automatically sent to Telegram (@sgifesdf_bot)!`);
+              }
+            });
+            // Trigger the alarm ringtone & alert modal at the allotted time!
+            this.triggerAlarmRing({
+              id: "telegram_scheduled_alarm",
+              title: "Daily History Sent to Telegram",
+              time: normalizedTgTime,
+              repeat: "Everyday"
+            });
+          }
+        }
+      }
     }, 1000);
   }
 
@@ -1849,7 +1879,7 @@ class FitSportApp {
         chatId: appState.state.telegramChatId || "7032355691"
       });
 
-      updateScheduleUI(res?.schedule);
+      updateScheduleUI(res?.schedule || appState.state.telegramSchedule);
       this.showToast(enabled ? `⏰ Telegram auto-history scheduled for ${time12}` : `⏸ Telegram auto-history paused.`);
     };
 

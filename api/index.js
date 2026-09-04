@@ -82,7 +82,7 @@ export default async function handler(req, res) {
     handleResetRoutes(req, res, parsedUrl, body);
     if (res.writableEnded) return;
 
-    handleTelegramRoutes(req, res, parsedUrl, body);
+    await handleTelegramRoutes(req, res, parsedUrl, body);
     if (res.writableEnded) return;
 
     if (!res.writableEnded) {

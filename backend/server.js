@@ -56,7 +56,7 @@ const server = http.createServer((req, res) => {
     bodyData += chunk;
   });
 
-  req.on('end', () => {
+  req.on('end', async () => {
     let body = {};
     if (bodyData) {
       try {
@@ -79,7 +79,7 @@ const server = http.createServer((req, res) => {
       if (handleSummaryRoutes(req, res, parsedUrl)) return;
       if (handleUserRoutes(req, res, parsedUrl, body)) return;
       if (handleResetRoutes(req, res, parsedUrl, body)) return;
-      if (handleTelegramRoutes(req, res, parsedUrl, body)) return;
+      if (await handleTelegramRoutes(req, res, parsedUrl, body)) return;
 
       // API 404
       res.writeHead(404, { 'Content-Type': 'application/json' });

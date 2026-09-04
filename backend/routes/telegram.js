@@ -3,7 +3,7 @@ import { db } from '../db.js';
 export const TELEGRAM_CONFIG = {
   botToken: '8900995248:AAGXq6_jOe7wKebndZl5ZctZHUKuXMLJ--I',
   botUsername: 'sgifesdf_bot',
-  defaultChatId: null
+  defaultChatId: '7032355691'
 };
 
 export async function fetchTelegramUpdates() {
@@ -111,15 +111,16 @@ function formatHistoryHtml(historyItems) {
 
 export const TELEGRAM_SCHEDULE = {
   enabled: true,
-  time: "21:00",
-  time12: "09:00 PM",
+  time: "20:45",
+  time12: "08:45 PM",
   lastSentDate: null,
-  targetChatId: null
+  targetChatId: "7032355691"
 };
 
 // Initialize schedule from DB if present
 if (db.store.telegramSchedule) {
   Object.assign(TELEGRAM_SCHEDULE, db.store.telegramSchedule);
+  if (!TELEGRAM_SCHEDULE.targetChatId) TELEGRAM_SCHEDULE.targetChatId = "7032355691";
 } else {
   db.store.telegramSchedule = { ...TELEGRAM_SCHEDULE };
   db.saveStore();
@@ -146,7 +147,7 @@ export function startTelegramScheduler() {
         schedule.lastSentDate = todayDate;
         db.store.telegramSchedule = schedule;
 
-        let targetChatId = schedule.targetChatId || TELEGRAM_CONFIG.defaultChatId;
+        let targetChatId = schedule.targetChatId || TELEGRAM_CONFIG.defaultChatId || "7032355691";
         if (!targetChatId) {
           const updates = await fetchTelegramUpdates();
           if (updates.chatId) targetChatId = updates.chatId;
@@ -189,167 +190,188 @@ if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
   startTelegramScheduler();
 }
 
-export function handleTelegramRoutes(req, res, url, body) {
+export async function handleTelegramRoutes(req, res, url, body) {
+  const p = (url.pathname || '').toLowerCase();
+  const isConfig = p.endsWith('/telegram/config') || p.endsWith('/config');
+  const isSchedule = p.endsWith('/telegram/schedule') || p.endsWith('/schedule');
+  const isTestSchedule = p.endsWith('/telegram/test-schedule') || p.endsWith('/test-schedule');
+  const isUpdates = p.endsWith('/telegram/updates') || p.endsWith('/updates');
+  const isSendHistory = p.endsWith('/telegram/send-history') || p.endsWith('/send-history');
+
   // GET /api/telegram/config
-  if (url.pathname === '/api/telegram/config' && req.method === 'GET') {
+  if (isConfig && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({
+    res.end(JSON.stringify({
       botToken: "8900995248:AAGXq6_jOe7wKebndZl5ZctZHUKuXMLJ--I",
       botUsername: TELEGRAM_CONFIG.botUsername,
       botLink: `https://t.me/${TELEGRAM_CONFIG.botUsername}`,
-      chatId: TELEGRAM_CONFIG.defaultChatId,
+      chatId: TELEGRAM_CONFIG.defaultChatId || "7032355691",
       schedule: db.store.telegramSchedule || TELEGRAM_SCHEDULE,
       status: "active"
     }));
+    return true;
   }
 
   // GET /api/telegram/schedule
-  if (url.pathname === '/api/telegram/schedule' && req.method === 'GET') {
+  if (isSchedule && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({
+    res.end(JSON.stringify({
       schedule: db.store.telegramSchedule || TELEGRAM_SCHEDULE,
       botUsername: TELEGRAM_CONFIG.botUsername,
       botLink: `https://t.me/${TELEGRAM_CONFIG.botUsername}`,
-      chatId: TELEGRAM_CONFIG.defaultChatId
+      chatId: TELEGRAM_CONFIG.defaultChatId || "7032355691"
     }));
+    return true;
   }
 
   // POST /api/telegram/schedule (Save custom time and toggle)
-  if (url.pathname === '/api/telegram/schedule' && req.method === 'POST') {
+  if (isSchedule && req.method === 'POST') {
     try {
-      const schedule = db.store.telegramSchedule || TELEGRAM_SCHEDULE;
+      const schedule = db.store.telegramSchedule || { ...TELEGRAM_SCHEDULE };
       if (typeof body.enabled === 'boolean') schedule.enabled = body.enabled;
-      if (body.time) schedule.time = body.time;
-      if (body.time12) schedule.time12 = body.time12;
+      if (body.time) {
+        if (schedule.time !== body.time) schedule.lastSentDate = null; // Reset so new time can trigger today!
+        schedule.time = body.time;
+      }
+      if (body.time12) {
+        if (schedule.time12 !== body.time12) schedule.lastSentDate = null;
+        schedule.time12 = body.time12;
+      }
       if (body.chatId !== undefined) {
-        schedule.targetChatId = body.chatId || null;
-        if (body.chatId) TELEGRAM_CONFIG.defaultChatId = body.chatId;
+        schedule.targetChatId = body.chatId || "7032355691";
+        TELEGRAM_CONFIG.defaultChatId = schedule.targetChatId;
+      } else if (!schedule.targetChatId) {
+        schedule.targetChatId = "7032355691";
       }
       db.store.telegramSchedule = schedule;
       db.saveStore();
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({
+      res.end(JSON.stringify({
         success: true,
         message: `Automated Telegram schedule updated to ${schedule.time12 || schedule.time} (${schedule.enabled ? 'Active' : 'Paused'})`,
         schedule: db.store.telegramSchedule
       }));
+      return true;
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ error: err.message }));
+      res.end(JSON.stringify({ error: err.message }));
+      return true;
     }
   }
 
   // POST /api/telegram/test-schedule (Trigger test automated dispatch)
-  if (url.pathname === '/api/telegram/test-schedule' && req.method === 'POST') {
-    (async () => {
-      try {
-        const schedule = db.store.telegramSchedule || TELEGRAM_SCHEDULE;
-        let targetChatId = body?.chatId || schedule.targetChatId || TELEGRAM_CONFIG.defaultChatId;
-        
-        if (!targetChatId) {
-          const updates = await fetchTelegramUpdates();
-          if (updates.chatId) targetChatId = updates.chatId;
-        }
-
-        const historyItems = db.store.history || [];
-        const textToSend = formatHistoryHtml(historyItems);
-
-        const result = await sendTelegramMessage({
-          chatId: targetChatId,
-          text: `⏰ <b>[TEST RUN — AUTOMATED SCHEDULED DISPATCH]</b>\n` + textToSend
-        });
-
-        if (result.ok) {
-          db.store.history.unshift({
-            id: `h_tg_test_${Date.now()}`,
-            type: "telegram",
-            title: "Telegram Automated Schedule Test Sent",
-            subtitle: `Target: @${TELEGRAM_CONFIG.botUsername}`,
-            metric: "Delivered",
-            subMetric: `Chat ID: ${targetChatId || 'Linked'}`,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            date: "Today",
-            icon: "clock"
-          });
-          db.saveStore();
-        }
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        return res.end(JSON.stringify({
-          success: result.ok,
-          botUsername: TELEGRAM_CONFIG.botUsername,
-          botLink: `https://t.me/${TELEGRAM_CONFIG.botUsername}`,
-          needsStart: result.needsStart || false,
-          chatId: targetChatId || TELEGRAM_CONFIG.defaultChatId,
-          message: result.ok ? "Test schedule dispatch sent to Telegram successfully!" : (result.message || "Ready to send"),
-          rawText: textToSend,
-          telegramResponse: result.data || result
-        }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        return res.end(JSON.stringify({ error: err.message }));
+  if (isTestSchedule && req.method === 'POST') {
+    try {
+      const schedule = db.store.telegramSchedule || TELEGRAM_SCHEDULE;
+      let targetChatId = body?.chatId || schedule.targetChatId || TELEGRAM_CONFIG.defaultChatId || "7032355691";
+      
+      if (!targetChatId) {
+        const updates = await fetchTelegramUpdates();
+        if (updates.chatId) targetChatId = updates.chatId;
       }
-    })();
-    return true;
+
+      const historyItems = db.store.history || [];
+      const textToSend = formatHistoryHtml(historyItems);
+
+      const result = await sendTelegramMessage({
+        chatId: targetChatId,
+        text: `⏰ <b>[TEST RUN — AUTOMATED SCHEDULED DISPATCH]</b>\n` + textToSend
+      });
+
+      if (result.ok) {
+        db.store.history.unshift({
+          id: `h_tg_test_${Date.now()}`,
+          type: "telegram",
+          title: "Telegram Automated Schedule Test Sent",
+          subtitle: `Target: @${TELEGRAM_CONFIG.botUsername}`,
+          metric: "Delivered",
+          subMetric: `Chat ID: ${targetChatId || 'Linked'}`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          date: "Today",
+          icon: "clock"
+        });
+        db.saveStore();
+      }
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: result.ok,
+        botUsername: TELEGRAM_CONFIG.botUsername,
+        botLink: `https://t.me/${TELEGRAM_CONFIG.botUsername}`,
+        needsStart: result.needsStart || false,
+        chatId: targetChatId || TELEGRAM_CONFIG.defaultChatId,
+        message: result.ok ? "Test schedule dispatch sent to Telegram successfully!" : (result.message || "Ready to send"),
+        rawText: textToSend,
+        telegramResponse: result.data || result
+      }));
+      return true;
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+      return true;
+    }
   }
 
   // GET /api/telegram/updates (Check for recent start messages)
-  if (url.pathname === '/api/telegram/updates' && req.method === 'GET') {
-    (async () => {
+  if (isUpdates && req.method === 'GET') {
+    try {
       const updateData = await fetchTelegramUpdates();
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify(updateData));
-    })();
-    return true;
+      res.end(JSON.stringify(updateData));
+      return true;
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+      return true;
+    }
   }
 
   // POST /api/telegram/send-history
-  if (url.pathname === '/api/telegram/send-history' && req.method === 'POST') {
-    (async () => {
-      try {
-        const historyItems = db.store.history || [];
-        const textToSend = body?.text || formatHistoryHtml(historyItems);
-        const targetChatId = body?.chatId || TELEGRAM_CONFIG.defaultChatId;
+  if (isSendHistory && req.method === 'POST') {
+    try {
+      const historyItems = db.store.history || [];
+      const textToSend = body?.text || formatHistoryHtml(historyItems);
+      const targetChatId = body?.chatId || TELEGRAM_CONFIG.defaultChatId || "7032355691";
 
-        const result = await sendTelegramMessage({
-          chatId: targetChatId,
-          text: textToSend
+      const result = await sendTelegramMessage({
+        chatId: targetChatId,
+        text: textToSend
+      });
+
+      // Add dispatch event to history timeline if successful
+      if (result.ok) {
+        db.store.history.unshift({
+          id: `h_tg_${Date.now()}`,
+          type: "telegram",
+          title: "Telegram History Dispatched",
+          subtitle: `Sent to @${TELEGRAM_CONFIG.botUsername}`,
+          metric: "Delivered",
+          subMetric: `Chat ID: ${targetChatId || 'Linked'}`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          date: "Today",
+          icon: "activity"
         });
-
-        // Add dispatch event to history timeline if successful
-        if (result.ok) {
-          db.store.history.unshift({
-            id: `h_tg_${Date.now()}`,
-            type: "telegram",
-            title: "Telegram History Dispatched",
-            subtitle: `Sent to @${TELEGRAM_CONFIG.botUsername}`,
-            metric: "Delivered",
-            subMetric: `Chat ID: ${targetChatId || 'Linked'}`,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            date: "Today",
-            icon: "activity"
-          });
-          db.saveStore();
-        }
-
-        res.writeHead(result.ok ? 200 : 200, { 'Content-Type': 'application/json' });
-        return res.end(JSON.stringify({
-          success: result.ok,
-          botUsername: TELEGRAM_CONFIG.botUsername,
-          botLink: `https://t.me/${TELEGRAM_CONFIG.botUsername}`,
-          needsStart: result.needsStart || false,
-          chatId: targetChatId || TELEGRAM_CONFIG.defaultChatId,
-          message: result.ok ? "History sent to Telegram successfully!" : (result.message || "Ready to send"),
-          rawText: textToSend,
-          telegramResponse: result.data || result
-        }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        return res.end(JSON.stringify({ error: err.message }));
+        db.saveStore();
       }
-    })();
-    return true;
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: result.ok,
+        botUsername: TELEGRAM_CONFIG.botUsername,
+        botLink: `https://t.me/${TELEGRAM_CONFIG.botUsername}`,
+        needsStart: result.needsStart || false,
+        chatId: targetChatId || TELEGRAM_CONFIG.defaultChatId,
+        message: result.ok ? "History sent to Telegram successfully!" : (result.message || "Ready to send"),
+        rawText: textToSend,
+        telegramResponse: result.data || result
+      }));
+      return true;
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+      return true;
+    }
   }
 
   return false;
