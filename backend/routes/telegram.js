@@ -192,13 +192,29 @@ if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
 
 export async function handleTelegramRoutes(req, res, url, body) {
   const p = (url.pathname || '').toLowerCase();
-  const isConfig = p.endsWith('/telegram/config') || p.endsWith('/config');
-  const isSchedule = p.endsWith('/telegram/schedule') || p.endsWith('/schedule');
-  const isTestSchedule = p.endsWith('/telegram/test-schedule') || p.endsWith('/test-schedule');
-  const isUpdates = p.endsWith('/telegram/updates') || p.endsWith('/updates');
-  const isSendHistory = p.endsWith('/telegram/send-history') || p.endsWith('/send-history');
+  const isBaseTelegram = p === '/api/telegram' || p === '/telegram' || p.endsWith('/telegram');
+  const actionParam = url.searchParams ? (url.searchParams.get('action') || '').toLowerCase() : '';
+  const postAction = (body?.action || actionParam || '').toLowerCase();
 
-  // GET /api/telegram/config
+  const isConfig = isBaseTelegram ? (actionParam === 'config' || !actionParam) : (p.endsWith('/telegram/config') || p.endsWith('/config'));
+  const isSchedule = (isBaseTelegram && (actionParam === 'schedule' || postAction === 'schedule' || postAction === 'save-schedule' || body?.time || body?.time12 || typeof body?.enabled === 'boolean')) || p.endsWith('/telegram/schedule') || p.endsWith('/schedule');
+  const isTestSchedule = (isBaseTelegram && (actionParam === 'test-schedule' || postAction === 'test-schedule')) || p.endsWith('/telegram/test-schedule') || p.endsWith('/test-schedule');
+  const isUpdates = (isBaseTelegram && (actionParam === 'updates' || postAction === 'updates')) || p.endsWith('/telegram/updates') || p.endsWith('/updates');
+  const isSendHistory = (isBaseTelegram && (actionParam === 'send-history' || postAction === 'send-history' || postAction === 'send' || body?.text)) || p.endsWith('/telegram/send-history') || p.endsWith('/send-history');
+
+  // GET /api/telegram (or /api/telegram/schedule if ?action=schedule)
+  if (isSchedule && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      schedule: db.store.telegramSchedule || TELEGRAM_SCHEDULE,
+      botUsername: TELEGRAM_CONFIG.botUsername,
+      botLink: `https://t.me/${TELEGRAM_CONFIG.botUsername}`,
+      chatId: TELEGRAM_CONFIG.defaultChatId || "7032355691"
+    }));
+    return true;
+  }
+
+  // GET /api/telegram/config (or default GET /api/telegram)
   if (isConfig && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
@@ -208,18 +224,6 @@ export async function handleTelegramRoutes(req, res, url, body) {
       chatId: TELEGRAM_CONFIG.defaultChatId || "7032355691",
       schedule: db.store.telegramSchedule || TELEGRAM_SCHEDULE,
       status: "active"
-    }));
-    return true;
-  }
-
-  // GET /api/telegram/schedule
-  if (isSchedule && req.method === 'GET') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      schedule: db.store.telegramSchedule || TELEGRAM_SCHEDULE,
-      botUsername: TELEGRAM_CONFIG.botUsername,
-      botLink: `https://t.me/${TELEGRAM_CONFIG.botUsername}`,
-      chatId: TELEGRAM_CONFIG.defaultChatId || "7032355691"
     }));
     return true;
   }

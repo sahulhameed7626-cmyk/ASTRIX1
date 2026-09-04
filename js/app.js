@@ -227,6 +227,11 @@ class FitSportApp {
     if (viewId === "daily-summary") {
       this.updateDailySummaryCard();
     }
+    if (viewId === "settings" || viewId === "history") {
+      if (typeof this.updateTelegramScheduleUI === "function") {
+        this.updateTelegramScheduleUI();
+      }
+    }
   }
 
   bindNavigation() {
@@ -1320,13 +1325,12 @@ class FitSportApp {
       if (result && result.success) {
         this.showToast(`✅ History sent to Telegram via @sgifesdf_bot!`);
       } else {
-        this.showToast(`✈️ Telegram ready! Opening Telegram share with full history...`);
+        this.showToast(`✈️ Telegram bot offline. Opening Telegram share with history...`);
+        // Preload Telegram with exact formatted history timeline as fallback
+        const encoded = encodeURIComponent(historyText);
+        const url = `https://t.me/share/url?url=&text=${encoded}`;
+        window.open(url, "_blank");
       }
-
-      // Preload Telegram with exact formatted history timeline
-      const encoded = encodeURIComponent(historyText);
-      const url = `https://t.me/share/url?url=&text=${encoded}`;
-      window.open(url, "_blank");
     });
 
     const handleResetHistory = () => {
@@ -1784,7 +1788,7 @@ class FitSportApp {
       if (match) {
         return {
           hour: match[1].padStart(2, '0'),
-          minute: match[2],
+          minute: match[2].padStart(2, '0'),
           ampm: match[3].toUpperCase()
         };
       }
@@ -1802,7 +1806,17 @@ class FitSportApp {
       if (hourSel) hourSel.value = parsed.hour;
 
       const minSel = document.getElementById("telegramScheduleMinute");
-      if (minSel) minSel.value = parsed.minute;
+      if (minSel) {
+        if (minSel.options.length < 60) {
+          const currentVal = minSel.value;
+          minSel.innerHTML = Array.from({ length: 60 }, (_, i) => {
+            const v = String(i).padStart(2, '0');
+            return `<option value="${v}">${v}</option>`;
+          }).join('');
+          minSel.value = currentVal || parsed.minute;
+        }
+        minSel.value = parsed.minute;
+      }
 
       const disp = document.getElementById("telegramScheduleDisplay");
       if (disp) {
@@ -1842,10 +1856,12 @@ class FitSportApp {
       });
     };
 
+    this.updateTelegramScheduleUI = updateScheduleUI;
+
     // Initial sync
     setTimeout(() => {
       updateScheduleUI();
-    }, 400);
+    }, 300);
 
     // Click on history badge navigates to Settings
     document.getElementById("historyTelegramScheduleBadge")?.addEventListener("click", () => {
@@ -1871,6 +1887,15 @@ class FitSportApp {
       if (ampm === "PM" && h24 < 12) h24 += 12;
       if (ampm === "AM" && h24 === 12) h24 = 0;
       const time24 = `${String(h24).padStart(2, '0')}:${min}`;
+
+      // Reset today's trigger keys for telegram alarm so newly scheduled time can ring
+      if (this.triggeredMinutes) {
+        const keysToDelete = [];
+        this.triggeredMinutes.forEach(key => {
+          if (key.includes('telegram')) keysToDelete.push(key);
+        });
+        keysToDelete.forEach(k => this.triggeredMinutes.delete(k));
+      }
 
       const res = await appState.saveTelegramSchedule({
         enabled,

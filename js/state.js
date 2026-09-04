@@ -46,8 +46,29 @@ class StateManager {
       auth: {
         isLoggedIn: true,
         onboardingComplete: true
-      }
+      },
+      telegramSchedule: { enabled: true, time: "20:45", time12: "08:45 PM" },
+      telegramChatId: "7032355691",
+      telegramBotUsername: "sgifesdf_bot"
     };
+  }
+
+  addHistoryItem(item) {
+    if (!this.state.history) this.state.history = [];
+    const entry = {
+      id: item.id || `h_${Date.now()}`,
+      type: item.type || "custom",
+      title: item.title || "Activity",
+      subtitle: item.subtitle || "",
+      metric: item.metric || "Logged",
+      subMetric: item.subMetric || "",
+      time: item.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: item.date || "Today",
+      icon: item.icon || "activity"
+    };
+    this.state.history.unshift(entry);
+    this.saveState();
+    return entry;
   }
 
   saveState() {
@@ -486,17 +507,19 @@ class StateManager {
 
   generateExactHistoryTelegramText() {
     const history = this.state.history || [];
+    const athlete = String(this.state.user?.name || "Alex Mercer")
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
     
     if (history.length === 0) {
-      return `🏆 *FITSPORT — Activity History Timeline*\n` +
-        `👤 *Athlete:* ${this.state.user.name}\n` +
-        `📅 *Date:* ${dateStr}\n` +
+      return `🏆 <b>FITSPORT — Activity History Timeline</b>\n` +
+        `👤 <b>Athlete:</b> ${athlete}\n` +
+        `📅 <b>Date:</b> ${dateStr}\n` +
         `━━━━━━━━━━━━━━━━━━━━━━\n` +
-        `*Status:* No activity items logged yet. Timeline is reset.\n` +
+        `<i>Status: No activity items logged yet. Timeline is reset.</i>\n` +
         `━━━━━━━━━━━━━━━━━━━━━━\n` +
-        `💪 _Train Smarter. Eat Better. Play Stronger._\n` +
-        `_FitSport Performance Platform_`;
+        `💪 <i>Train Smarter. Eat Better. Play Stronger.</i>\n` +
+        `<i>FitSport Performance Platform</i>`;
     }
 
     const itemsFormatted = history.map((item, idx) => {
@@ -507,27 +530,51 @@ class StateManager {
       else if (item.type === "sports") icon = "🚴";
       else if (item.type === "weight") icon = "⚖️";
 
-      return `${idx + 1}. ${icon} *${item.title}*\n` +
-             `   • Time: ${item.time || 'Today'} | Metric: *${item.metric || 'N/A'}*\n` +
-             `   • Details: ${item.subtitle || ''}${item.subMetric ? ' (' + item.subMetric + ')' : ''}`;
+      const title = String(item.title || 'Activity').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const time = String(item.time || 'Today').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const metric = String(item.metric || 'Logged').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const subtitle = String(item.subtitle || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const subMetric = item.subMetric ? ` (${String(item.subMetric).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')})` : '';
+
+      return `${idx + 1}. ${icon} <b>${title}</b>\n` +
+             `   • Time: ${time} | Metric: <b>${metric}</b>\n` +
+             `   • Details: ${subtitle}${subMetric}`;
     }).join('\n\n');
 
-    return `🏆 *FITSPORT — Activity History Timeline*\n` +
-      `👤 *Athlete:* ${this.state.user.name}\n` +
-      `📅 *Date:* ${dateStr}\n` +
-      `📊 *Total Logged Activities:* ${history.length}\n` +
+    return `🏆 <b>FITSPORT — Activity History Timeline</b>\n` +
+      `👤 <b>Athlete:</b> ${athlete}\n` +
+      `📅 <b>Date:</b> ${dateStr}\n` +
+      `📊 <b>Total Logged Activities:</b> ${history.length}\n` +
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
       `${itemsFormatted}\n` +
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `💪 _Train Smarter. Eat Better. Play Stronger._\n` +
-      `_FitSport Performance Platform_`;
+      `💪 <i>Train Smarter. Eat Better. Play Stronger.</i>\n` +
+      `<i>FitSport Performance Platform</i>`;
   }
 
   async sendTelegramHistoryNotification(customText, chatId) {
     const targetChatId = chatId || this.state.telegramChatId || "7032355691";
     const textToSend = customText || this.generateExactHistoryTelegramText();
 
-    // 1. Try Backend API first
+    // 1. Try single-segment Backend API (/api/telegram with action: send-history)
+    try {
+      const res = await fetch('/api/telegram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send-history', text: textToSend, chatId: targetChatId })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && (data.success || data.ok)) {
+          this.syncWithBackend();
+          return { success: true, ...data };
+        }
+      }
+    } catch (e) {
+      console.warn("Backend /api/telegram dispatch failed:", e);
+    }
+
+    // 1b. Fallback to /api/telegram/send-history
     try {
       const res = await fetch('/api/telegram/send-history', {
         method: 'POST',
@@ -541,9 +588,7 @@ class StateManager {
           return { success: true, ...data };
         }
       }
-    } catch (e) {
-      console.warn("Backend telegram dispatch failed, falling back to direct Telegram Bot API:", e);
-    }
+    } catch (e) {}
 
     // 2. Direct Telegram Bot API fallback (works 100% reliably in any environment including Vercel and offline)
     try {
@@ -580,6 +625,10 @@ class StateManager {
 
   async getTelegramUpdates() {
     try {
+      const res = await fetch('/api/telegram?action=updates');
+      if (res.ok) return await res.json();
+    } catch (e) {}
+    try {
       const res = await fetch('/api/telegram/updates');
       if (res.ok) return await res.json();
     } catch (e) {}
@@ -603,7 +652,10 @@ class StateManager {
     }
 
     try {
-      const res = await fetch('/api/telegram/schedule');
+      let res = await fetch('/api/telegram?action=schedule');
+      if (!res.ok) {
+        res = await fetch('/api/telegram/schedule');
+      }
       if (res.ok) {
         const data = await res.json();
         if (data && data.schedule) {
@@ -633,12 +685,12 @@ class StateManager {
     if (chatId) this.state.telegramChatId = chatId;
     this.saveState();
 
-    // Sync with backend API
+    // Sync with backend API via /api/telegram
     try {
-      const res = await fetch('/api/telegram/schedule', {
+      const res = await fetch('/api/telegram', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedSchedule)
+        body: JSON.stringify({ action: 'schedule', ...updatedSchedule })
       });
       if (res.ok) {
         const data = await res.json();
@@ -648,7 +700,13 @@ class StateManager {
         }
       }
     } catch (e) {
-      console.warn("Schedule saved locally, backend sync notice:", e);
+      try {
+        await fetch('/api/telegram/schedule', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedSchedule)
+        });
+      } catch (err) {}
     }
     return { success: true, schedule: this.state.telegramSchedule };
   }

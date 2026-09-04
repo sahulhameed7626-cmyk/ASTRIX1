@@ -156,6 +156,17 @@
   ],
   "history": [
     {
+      "id": "h_tg_1788546092286",
+      "type": "telegram",
+      "title": "Telegram History Dispatched",
+      "subtitle": "Sent to @sgifesdf_bot",
+      "metric": "Delivered",
+      "subMetric": "Chat ID: 7032355691",
+      "time": "11:51 PM",
+      "date": "Today",
+      "icon": "activity"
+    },
+    {
       "id": "h_tg_auto_1788534619136",
       "type": "telegram",
       "title": "Automated Daily History Sent to Telegram",
@@ -371,8 +382,8 @@
   ],
   "telegramSchedule": {
     "enabled": true,
-    "time": "20:45",
-    "time12": "08:45 PM",
+    "time": "22:15",
+    "time12": "10:15 PM",
     "lastSentDate": null,
     "targetChatId": "7032355691"
   }
