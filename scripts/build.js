@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
 
-const targetDirs = ['dist', 'public', 'build'];
+const targetDirs = ['dist', 'public'];
 
 function copyRecursive(src, dest) {
   if (!fs.existsSync(src)) return;
