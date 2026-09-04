@@ -182,9 +182,9 @@
 
       <div class="sidebar-footer">
         <div class="user-mini-card" id="sidebarUserCard" data-view="profile">
-          <div class="user-avatar-mini" id="sidebarAvatar">AM</div>
+          <div class="user-avatar-mini" id="sidebarAvatar">SH</div>
           <div class="user-info-mini">
-            <span class="user-name-mini" id="sidebarUserName">Alex Mercer</span>
+            <span class="user-name-mini" id="sidebarUserName">Sahul Hameed</span>
             <span class="user-status-mini">● Athlete Pro</span>
           </div>
         </div>
@@ -333,7 +333,7 @@
 
               <div class="form-group">
                 <label class="form-label" for="loginName">Athlete Name</label>
-                <input type="text" id="loginName" class="form-input" placeholder="e.g. Alex Mercer" value="Alex Mercer">
+                <input type="text" id="loginName" class="form-input" placeholder="e.g. Sahul Hameed" value="Sahul Hameed">
               </div>
 
               <div class="form-group">
@@ -384,7 +384,7 @@
                 <p style="margin-bottom: 24px;">Let's customize your FitSport profile.</p>
                 <div class="form-group">
                   <label class="form-label">Full Name</label>
-                  <input type="text" id="obName" class="form-input" value="Alex Mercer">
+                  <input type="text" id="obName" class="form-input" placeholder="e.g. Sahul Hameed" value="Sahul Hameed">
                 </div>
                 <div class="form-group">
                   <label class="form-label">Phone Number</label>
@@ -512,7 +512,7 @@
           <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px;">
             <div>
               <span class="badge-tag">ATHLETIC HUB</span>
-              <h1 style="margin-top: 4px;">Good Morning, Alex</h1>
+              <h1 style="margin-top: 4px;" id="dashGreetingHeader"><span id="dashGreetingTime">Good Morning</span>, <span id="dashGreetingName">Sahul Hameed</span></h1>
               <p style="font-size: 1.05rem;">"Let's make today count."</p>
             </div>
             <button class="btn btn-soft" id="dashViewDailySummaryBtn" data-view="daily-summary">
@@ -1443,7 +1443,7 @@
                 <div>
                   <span style="font-size: 0.8rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #1e331b;">FITSPORT DAILY LOG</span>
                   <h2 style="font-size: 2.2rem; color: #060606; margin-top: 4px;">Today's Consolidated Report</h2>
-                  <p style="color: #243522; font-weight: 500;" id="summaryDateLabel">Thursday, September 4, 2026 • Athlete: Alex Mercer</p>
+                  <p style="color: #243522; font-weight: 500;" id="summaryDateLabel">Thursday, September 4, 2026 • Athlete: Sahul Hameed</p>
                 </div>
                 <div class="metric-icon-box" style="background: rgba(6, 6, 6, 0.12); width: 44px; height: 44px;">
                   <svg width="24" height="24" stroke="#060606"><use href="#icon-activity"></use></svg>
@@ -1526,9 +1526,9 @@
             <!-- Profile Header Card -->
             <div class="card" style="margin-bottom: 24px;">
               <div style="display: flex; align-items: center; gap: 24px;">
-                <div class="user-avatar-mini" style="width: 72px; height: 72px; font-size: 1.8rem;" id="profileAvatarLarge">AM</div>
+                <div class="user-avatar-mini" style="width: 72px; height: 72px; font-size: 1.8rem;" id="profileAvatarLarge">SH</div>
                 <div>
-                  <h2 style="font-size: 1.6rem;" id="profileNameDisplay">Alex Mercer</h2>
+                  <h2 style="font-size: 1.6rem;" id="profileNameDisplay">Sahul Hameed</h2>
                   <p id="profilePhoneDisplay">+91 98765 43210</p>
                   <span class="badge-tag" style="margin-top: 8px;" id="profileGoalBadge">Improve Sports Performance</span>
                 </div>
@@ -1597,7 +1597,7 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--border-subtle);">
                   <div>
                     <div style="font-weight: 600;">Account Profile</div>
-                    <div style="font-size: 0.8rem; color: var(--text-secondary);" id="settingsAccountPhoneDisplay">Alex Mercer (+91 98765 43210)</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary);" id="settingsAccountPhoneDisplay">Sahul Hameed (+91 99999 88888)</div>
                   </div>
                   <button class="btn btn-secondary btn-sm" id="manageAccountBtn">Manage</button>
                 </div>
@@ -1908,8 +1908,8 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="editProfName">Full Name</label>
-        <input type="text" id="editProfName" class="form-input" placeholder="e.g. Alex Mercer" value="">
+        <label class="form-label" for="editProfName">Full Athlete Name</label>
+        <input type="text" id="editProfName" class="form-input" placeholder="e.g. Sahul Hameed" value="Sahul Hameed">
       </div>
 
       <div class="form-group">

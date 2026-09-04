@@ -522,7 +522,7 @@ class StateManager {
 
   generateExactHistoryTelegramText() {
     const history = this.state.history || [];
-    const athlete = String(this.state.user?.name || "Alex Mercer")
+    const athlete = String(this.state.user?.name || "Sahul Hameed")
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
     

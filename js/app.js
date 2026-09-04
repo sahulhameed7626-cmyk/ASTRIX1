@@ -214,6 +214,7 @@ class FitSportApp {
     // View-specific initialization triggers
     if (viewId === "dashboard" || viewId === "fitness") {
       this.renderWeightComponents();
+      this.renderAllDynamicComponents();
     }
     if (viewId === "profile") {
       this.renderProfileScreen();
@@ -227,9 +228,9 @@ class FitSportApp {
     }
     if (viewId === "login") {
       const loginName = document.getElementById("loginName");
-      if (loginName) loginName.value = appState.state.user.name || "Alex Mercer";
+      if (loginName) loginName.value = appState.state.user.name || "Sahul Hameed";
       const loginPhone = document.getElementById("loginPhone");
-      if (loginPhone) loginPhone.value = (appState.state.user.phone || "").replace(/^\+91\s*/, "") || "9876543210";
+      if (loginPhone) loginPhone.value = (appState.state.user.phone || "").replace(/^\+91\s*/, "") || "9999988888";
     }
     if (viewId === "analytics") {
       this.renderAnalyticsCharts();
@@ -306,7 +307,7 @@ class FitSportApp {
     });
 
     document.getElementById("loginSubmitBtn")?.addEventListener("click", async () => {
-      const name = (document.getElementById("loginName")?.value || "").trim() || appState.state.user.name || "Alex Mercer";
+      const name = (document.getElementById("loginName")?.value || "").trim() || appState.state.user.name || "Sahul Hameed";
       const rawPhone = (document.getElementById("loginPhone")?.value || "9876543210").trim();
       const phone = rawPhone.startsWith("+") ? rawPhone : `+91 ${rawPhone}`;
       const height = parseFloat(document.getElementById("loginHeight")?.value) || 178;
@@ -380,8 +381,8 @@ class FitSportApp {
         this.currentOnboardingStep++;
         this.updateOnboardingStepUI();
       } else {
-        const name = (document.getElementById("obName")?.value || "").trim() || "Alex Mercer";
-        const phone = (document.getElementById("obPhone")?.value || "").trim() || "+91 98765 43210";
+        const name = (document.getElementById("obName")?.value || "").trim() || appState.state.user.name || "Sahul Hameed";
+        const phone = (document.getElementById("obPhone")?.value || "").trim() || appState.state.user.phone || "+91 99999 88888";
         const height = parseFloat(document.getElementById("obHeight")?.value) || 178;
         const currentW = parseFloat(document.getElementById("obCurrentWeight")?.value) || 69.5;
         const targetW = parseFloat(document.getElementById("obTargetWeight")?.value) || 65.0;
@@ -430,10 +431,10 @@ class FitSportApp {
     if (!user) return;
 
     const obName = document.getElementById("obName");
-    if (obName) obName.value = user.name || "Alex Mercer";
+    if (obName) obName.value = user.name || "Sahul Hameed";
 
     const obPhone = document.getElementById("obPhone");
-    if (obPhone) obPhone.value = user.phone || "+91 98765 43210";
+    if (obPhone) obPhone.value = user.phone || "+91 99999 88888";
 
     const obHeight = document.getElementById("obHeight");
     if (obHeight) obHeight.value = user.height || 178;
@@ -2008,10 +2009,10 @@ class FitSportApp {
     if (!modal) return;
 
     const nameInput = document.getElementById("editProfName");
-    if (nameInput) nameInput.value = user.name || "Alex Mercer";
+    if (nameInput) nameInput.value = user.name || "Sahul Hameed";
 
     const phoneInput = document.getElementById("editProfPhone");
-    if (phoneInput) phoneInput.value = user.phone || "+91 98765 43210";
+    if (phoneInput) phoneInput.value = user.phone || "+91 99999 88888";
 
     const heightInput = document.getElementById("editProfHeight");
     if (heightInput) heightInput.value = user.height || 178;
@@ -2075,8 +2076,8 @@ class FitSportApp {
     });
 
     document.getElementById("saveEditProfileModalBtn")?.addEventListener("click", async () => {
-      const name = (document.getElementById("editProfName")?.value || "").trim() || "Alex Mercer";
-      const phone = (document.getElementById("editProfPhone")?.value || "").trim() || "+91 98765 43210";
+      const name = (document.getElementById("editProfName")?.value || "").trim() || appState.state.user.name || "Sahul Hameed";
+      const phone = (document.getElementById("editProfPhone")?.value || "").trim() || appState.state.user.phone || "+91 99999 88888";
       const height = parseFloat(document.getElementById("editProfHeight")?.value) || 178;
       const currentWeight = parseFloat(document.getElementById("editProfCurrentWeight")?.value) || 69.5;
       const targetWeight = parseFloat(document.getElementById("editProfTargetWeight")?.value) || 65.0;
@@ -2143,19 +2144,42 @@ class FitSportApp {
     const waterTotalMl = appState.getWaterTotal();
     const burned = appState.getCaloriesBurnedToday();
 
-    const sidebarAvatar = document.getElementById("sidebarAvatar");
-    if (sidebarAvatar) sidebarAvatar.textContent = user.avatar || "AM";
-    const sidebarName = document.getElementById("sidebarUserName");
-    if (sidebarName) sidebarName.textContent = user.name || "Alex Mercer";
+    // 1. Dynamic Dashboard Greeting
+    const hour = new Date().getHours();
+    let timeGreeting = "Good Morning";
+    if (hour >= 12 && hour < 17) {
+      timeGreeting = "Good Afternoon";
+    } else if (hour >= 17 || hour < 4) {
+      timeGreeting = "Good Evening";
+    }
+    const dashGreetingTime = document.getElementById("dashGreetingTime");
+    if (dashGreetingTime) {
+      dashGreetingTime.textContent = timeGreeting;
+    }
+    const dashGreetingName = document.getElementById("dashGreetingName");
+    if (dashGreetingName) {
+      dashGreetingName.textContent = user.name || "Sahul Hameed";
+    }
+    const dashGreetingHeader = document.getElementById("dashGreetingHeader");
+    if (dashGreetingHeader && (!dashGreetingName || !dashGreetingTime)) {
+      dashGreetingHeader.innerHTML = `<span id="dashGreetingTime">${timeGreeting}</span>, <span id="dashGreetingName">${user.name || "Sahul Hameed"}</span>`;
+    }
 
+    // 2. Sidebar Mini Card
+    const sidebarAvatar = document.getElementById("sidebarAvatar");
+    if (sidebarAvatar) sidebarAvatar.textContent = user.avatar || "SH";
+    const sidebarName = document.getElementById("sidebarUserName");
+    if (sidebarName) sidebarName.textContent = user.name || "Sahul Hameed";
+
+    // 3. Profile Screen Info
     const profAvatar = document.getElementById("profileAvatarLarge");
-    if (profAvatar) profAvatar.textContent = user.avatar || "AM";
+    if (profAvatar) profAvatar.textContent = user.avatar || "SH";
 
     const profName = document.getElementById("profileNameDisplay");
-    if (profName) profName.textContent = user.name || "Alex Mercer";
+    if (profName) profName.textContent = user.name || "Sahul Hameed";
 
     const profPhone = document.getElementById("profilePhoneDisplay");
-    if (profPhone) profPhone.textContent = user.phone || "+91 98765 43210";
+    if (profPhone) profPhone.textContent = user.phone || "+91 99999 88888";
 
     const profGoalBadge = document.getElementById("profileGoalBadge");
     if (profGoalBadge) profGoalBadge.textContent = user.fitnessGoal || "Improve Sports Performance";
@@ -2180,12 +2204,12 @@ class FitSportApp {
     }
 
     const settingsPhone = document.getElementById("settingsAccountPhoneDisplay");
-    if (settingsPhone) settingsPhone.textContent = `${user.name || "Alex Mercer"} (${user.phone || "+91 98765 43210"})`;
+    if (settingsPhone) settingsPhone.textContent = `${user.name || "Sahul Hameed"} (${user.phone || "+91 99999 88888"})`;
 
     const summaryDate = document.getElementById("summaryDateLabel");
     if (summaryDate) {
       const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-      summaryDate.textContent = `${dateStr} • Athlete: ${user.name || "Alex Mercer"}`;
+      summaryDate.textContent = `${dateStr} • Athlete: ${user.name || "Sahul Hameed"}`;
     }
 
     const dCals = document.getElementById("dashValCaloriesConsumed");

@@ -39,10 +39,10 @@ try {
 
 const DEFAULT_STORE = {
   user: {
-    id: "user_alex_mercer",
-    name: "Alex Mercer",
-    phone: "+91 98765 43210",
-    avatar: "AM",
+    id: "user_sahul_hameed",
+    name: "Sahul Hameed",
+    phone: "+91 99999 88888",
+    avatar: "SH",
     height: 178,
     currentWeight: 69.5,
     startingWeight: 72.0,

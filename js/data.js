@@ -1,8 +1,8 @@
 // FitSport Initial Seed & Static Data
 export const INITIAL_USER = {
-  name: "Alex Mercer",
-  phone: "+91 98765 43210",
-  avatar: "AM",
+  name: "Sahul Hameed",
+  phone: "+91 99999 88888",
+  avatar: "SH",
   height: 178, // cm
   currentWeight: 69.5, // kg
   startingWeight: 72.0, // kg
