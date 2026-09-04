@@ -1895,12 +1895,16 @@ class FitSportApp {
   bindDailySummaryAndTelegram() {
     document.getElementById("shareTelegramBtn")?.addEventListener("click", async () => {
       const text = appState.generateDailySummaryTelegramText();
-      appState.sendTelegramHistoryNotification(text);
-
-      const encoded = encodeURIComponent(text);
-      const url = `https://t.me/share/url?url=&text=${encoded}`;
-      window.open(url, "_blank");
-      this.showToast("Opening Telegram with Daily Summary...");
+      this.showToast("⏳ Sending Daily Summary to Telegram (@sgifesdf_bot)...");
+      const res = await appState.sendTelegramHistoryNotification(text);
+      if (res && res.success) {
+        this.showToast("✅ Daily Summary dispatched to Telegram (@sgifesdf_bot)! Check your chat.");
+      } else {
+        const encoded = encodeURIComponent(text);
+        const url = `https://t.me/share/url?url=&text=${encoded}`;
+        window.open(url, "_blank");
+        this.showToast("Opening Telegram with Daily Summary...");
+      }
     });
 
     document.getElementById("copySummaryBtn")?.addEventListener("click", () => {
@@ -1987,10 +1991,32 @@ class FitSportApp {
         histBadge.textContent = `⏰ Auto-Send: ${schedule.time12 || '08:45 PM'} (${schedule.enabled !== false ? 'Active' : 'Off'})`;
       }
 
+      const activeId = appState.state.telegramChatId || "7032355691";
       const chatIdDisp = document.getElementById("telegramChatIdDisplay");
       if (chatIdDisp) {
-        chatIdDisp.textContent = `${appState.state.telegramChatId || '7032355691'} (@sgifesdf_bot)`;
+        const label = activeId === "7032355691" ? "Sahul (7032355691)" : (activeId === "5490113240" ? "maddy_06 (5490113240)" : activeId);
+        chatIdDisp.textContent = `${label} (@sgifesdf_bot)`;
       }
+
+      const chatInput = document.getElementById("telegramChatIdInput");
+      if (chatInput && document.activeElement !== chatInput) {
+        chatInput.value = activeId;
+      }
+
+      document.querySelectorAll(".telegram-chat-preset-btn").forEach(btn => {
+        const cid = btn.getAttribute("data-chatid");
+        if (cid === activeId) {
+          btn.classList.add("btn-primary");
+          btn.classList.remove("btn-secondary");
+          btn.style.background = "#24A1DE";
+          btn.style.borderColor = "#24A1DE";
+        } else {
+          btn.classList.remove("btn-primary");
+          btn.classList.add("btn-secondary");
+          btn.style.background = "";
+          btn.style.borderColor = "";
+        }
+      });
 
       // Update AM/PM pill styles
       document.querySelectorAll(".telegram-ampm-btn").forEach(btn => {
@@ -2062,6 +2088,28 @@ class FitSportApp {
 
     document.getElementById("saveTelegramScheduleBtn")?.addEventListener("click", saveCurrentSchedule);
     document.getElementById("telegramScheduleToggle")?.addEventListener("change", saveCurrentSchedule);
+
+    document.querySelectorAll(".telegram-chat-preset-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const cid = btn.getAttribute("data-chatid");
+        if (cid) {
+          appState.state.telegramChatId = cid;
+          appState.saveState();
+          saveCurrentSchedule();
+          this.showToast(`Active Telegram target set to ${cid === "7032355691" ? "Sahul (7032355691)" : cid}`);
+        }
+      });
+    });
+
+    document.getElementById("saveTelegramChatIdBtn")?.addEventListener("click", () => {
+      const val = document.getElementById("telegramChatIdInput")?.value.trim();
+      if (val) {
+        appState.state.telegramChatId = val;
+        appState.saveState();
+        saveCurrentSchedule();
+        this.showToast(`Active Telegram chat ID updated to ${val}`);
+      }
+    });
 
     document.querySelectorAll(".telegram-ampm-btn").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -2186,10 +2234,20 @@ class FitSportApp {
     });
 
     document.getElementById("testTelegramNotificationBtn")?.addEventListener("click", async () => {
-      this.showToast("⏳ Sending activity history test to Telegram @sgifesdf_bot...");
-      const result = await appState.testTelegramSchedule(appState.state.telegramChatId || "7032355691");
+      const btn = document.getElementById("testTelegramNotificationBtn");
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Sending...";
+      }
+      this.showToast("⏳ Sending test history to Telegram (@sgifesdf_bot)...");
+      const targetId = appState.state.telegramChatId || "7032355691";
+      const result = await appState.testTelegramSchedule(targetId);
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "Send Test to Telegram";
+      }
       if (result && result.success) {
-        this.showToast(`✅ Activity History Delivered to Telegram via @sgifesdf_bot!`);
+        this.showToast(`✅ Activity History Delivered to Telegram via @sgifesdf_bot! Check your Telegram.`);
       } else {
         this.showToast(`✈️ Opening @sgifesdf_bot in Telegram. Click START to link!`);
         window.open("https://t.me/sgifesdf_bot", "_blank");

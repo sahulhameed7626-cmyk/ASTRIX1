@@ -3,8 +3,8 @@ import { db } from '../db.js';
 export const TELEGRAM_CONFIG = {
   botToken: '8900995248:AAGXq6_jOe7wKebndZl5ZctZHUKuXMLJ--I',
   botUsername: 'sgifesdf_bot',
-  defaultChatId: '5490113240',
-  defaultChatIds: ['5490113240', '7032355691']
+  defaultChatId: '7032355691', // Sahul Hameed (Primary)
+  defaultChatIds: ['7032355691', '5490113240']
 };
 
 export async function fetchTelegramUpdates() {
@@ -12,8 +12,8 @@ export async function fetchTelegramUpdates() {
     const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.botToken}/getUpdates`);
     const data = await res.json();
     const chatIds = new Set(TELEGRAM_CONFIG.defaultChatIds);
-    let latestChatId = '5490113240';
-    let latestUsername = 'maddy_06';
+    let latestChatId = '7032355691';
+    let latestUsername = 'Sahul';
 
     if (data.ok && Array.isArray(data.result) && data.result.length > 0) {
       for (let i = data.result.length - 1; i >= 0; i--) {
@@ -21,9 +21,9 @@ export async function fetchTelegramUpdates() {
         if (msg?.chat?.id) {
           const cid = String(msg.chat.id);
           chatIds.add(cid);
-          if (!latestChatId || latestChatId === '7032355691') {
+          if (cid === '7032355691' || !latestChatId) {
             latestChatId = cid;
-            latestUsername = msg.from?.username || msg.chat?.first_name || 'User';
+            latestUsername = msg.from?.first_name || msg.from?.username || 'Sahul';
           }
         }
       }
@@ -39,7 +39,7 @@ export async function fetchTelegramUpdates() {
     };
   } catch (err) {
     console.error("Failed to fetch Telegram updates:", err);
-    return { error: err.message, chatId: '5490113240', chatIds: TELEGRAM_CONFIG.defaultChatIds };
+    return { error: err.message, chatId: '7032355691', chatIds: TELEGRAM_CONFIG.defaultChatIds };
   }
 }
 
@@ -47,20 +47,25 @@ export async function sendTelegramMessage({ chatId, chatIds, text }) {
   const token = TELEGRAM_CONFIG.botToken;
   const updateInfo = await fetchTelegramUpdates();
   
-  let targetChatIds = [];
+  // Build comprehensive recipient list: always include Sahul (7032355691) and maddy_06 (5490113240)
+  const chatSet = new Set(['7032355691', '5490113240']);
   if (chatId) {
-    targetChatIds = Array.isArray(chatId) ? chatId : [String(chatId)];
-  } else if (chatIds && Array.isArray(chatIds)) {
-    targetChatIds = chatIds.map(String);
-  } else if (updateInfo.chatIds && updateInfo.chatIds.length > 0) {
-    targetChatIds = updateInfo.chatIds;
-  } else {
-    targetChatIds = TELEGRAM_CONFIG.defaultChatIds;
+    if (Array.isArray(chatId)) chatId.forEach(c => c && chatSet.add(String(c).trim()));
+    else chatSet.add(String(chatId).trim());
+  }
+  if (chatIds && Array.isArray(chatIds)) {
+    chatIds.forEach(c => c && chatSet.add(String(c).trim()));
+  }
+  if (updateInfo.chatIds && Array.isArray(updateInfo.chatIds)) {
+    updateInfo.chatIds.forEach(c => c && chatSet.add(String(c).trim()));
   }
 
-  // Ensure primary active chat ID 5490113240 is always targeted
-  if (!targetChatIds.includes('5490113240')) {
-    targetChatIds.unshift('5490113240');
+  const targetChatIds = Array.from(chatSet);
+
+  // Guard against Telegram 4096-character message length limit
+  let messageText = String(text || '');
+  if (messageText.length > 4000) {
+    messageText = messageText.slice(0, 3950) + '\n\n...[Timeline continues in FitSport Platform]';
   }
 
   const results = [];
@@ -68,24 +73,41 @@ export async function sendTelegramMessage({ chatId, chatIds, text }) {
 
   for (const cid of targetChatIds) {
     try {
-      const response = await fetch(url, {
+      // 1. Try sending with HTML parse_mode
+      let response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: cid,
-          text: text,
+          text: messageText,
           parse_mode: 'HTML'
         })
       });
-      const data = await response.json();
-      results.push({ chatId: cid, ok: response.ok, data });
+      let data = await response.json();
+
+      // 2. Fallback to clean plain text if Telegram entity parsing fails
+      if (!response.ok || !data.ok) {
+        console.warn(`[Telegram] HTML delivery failed for chat ${cid}, retrying plain text...`, data);
+        const plainText = messageText.replace(/<[^>]+>/g, '');
+        response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: cid,
+            text: plainText
+          })
+        });
+        data = await response.json();
+      }
+
+      results.push({ chatId: cid, ok: response.ok && data.ok, data });
     } catch (err) {
       results.push({ chatId: cid, ok: false, error: err.message });
     }
   }
 
   const anySuccess = results.some(r => r.ok);
-  const primaryData = results.find(r => r.ok)?.data || results[0]?.data;
+  const primaryData = results.find(r => r.ok && r.chatId === '7032355691')?.data || results.find(r => r.ok)?.data || results[0]?.data;
 
   return {
     ok: anySuccess,
@@ -96,8 +118,12 @@ export async function sendTelegramMessage({ chatId, chatIds, text }) {
   };
 }
 
+function escapeHtml(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function formatHistoryHtml(historyItems) {
-  const athlete = db.store.user?.name || "Sahul Hameed";
+  const athlete = escapeHtml(db.store.user?.name || "Sahul Hameed");
   const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 
   if (!historyItems || historyItems.length === 0) {
@@ -119,9 +145,15 @@ function formatHistoryHtml(historyItems) {
     else if (item.type === "sports") icon = "🚴";
     else if (item.type === "weight") icon = "⚖️";
 
-    return `${idx + 1}. ${icon} <b>${item.title}</b>\n` +
-           `   • Time: ${item.time || 'Today'} | Metric: <b>${item.metric || 'N/A'}</b>\n` +
-           `   • Details: ${item.subtitle || ''}${item.subMetric ? ' (' + item.subMetric + ')' : ''}`;
+    const title = escapeHtml(item.title || 'Activity');
+    const time = escapeHtml(item.time || 'Today');
+    const metric = escapeHtml(item.metric || 'Logged');
+    const subtitle = escapeHtml(item.subtitle || '');
+    const subMetric = item.subMetric ? ` (${escapeHtml(item.subMetric)})` : '';
+
+    return `${idx + 1}. ${icon} <b>${title}</b>\n` +
+           `   • Time: ${time} | Metric: <b>${metric}</b>\n` +
+           `   • Details: ${subtitle}${subMetric}`;
   }).join('\n\n');
 
   return `🏆 <b>FITSPORT — Activity History Timeline</b>\n` +
@@ -140,13 +172,13 @@ export const TELEGRAM_SCHEDULE = {
   time: "20:45",
   time12: "08:45 PM",
   lastSentDate: null,
-  targetChatId: "5490113240"
+  targetChatId: "7032355691"
 };
 
 // Initialize schedule from DB if present
 if (db.store.telegramSchedule) {
   Object.assign(TELEGRAM_SCHEDULE, db.store.telegramSchedule);
-  if (!TELEGRAM_SCHEDULE.targetChatId) TELEGRAM_SCHEDULE.targetChatId = "5490113240";
+  if (!TELEGRAM_SCHEDULE.targetChatId) TELEGRAM_SCHEDULE.targetChatId = "7032355691";
 } else {
   db.store.telegramSchedule = { ...TELEGRAM_SCHEDULE };
   db.saveStore();
@@ -235,7 +267,7 @@ export async function handleTelegramRoutes(req, res, url, body) {
       schedule: db.store.telegramSchedule || TELEGRAM_SCHEDULE,
       botUsername: TELEGRAM_CONFIG.botUsername,
       botLink: `https://t.me/${TELEGRAM_CONFIG.botUsername}`,
-      chatId: TELEGRAM_CONFIG.defaultChatId || "5490113240"
+      chatId: TELEGRAM_CONFIG.defaultChatId || "7032355691"
     }));
     return true;
   }
@@ -247,7 +279,7 @@ export async function handleTelegramRoutes(req, res, url, body) {
       botToken: "8900995248:AAGXq6_jOe7wKebndZl5ZctZHUKuXMLJ--I",
       botUsername: TELEGRAM_CONFIG.botUsername,
       botLink: `https://t.me/${TELEGRAM_CONFIG.botUsername}`,
-      chatId: TELEGRAM_CONFIG.defaultChatId || "5490113240",
+      chatId: TELEGRAM_CONFIG.defaultChatId || "7032355691",
       schedule: db.store.telegramSchedule || TELEGRAM_SCHEDULE,
       status: "active"
     }));
@@ -362,7 +394,7 @@ export async function handleTelegramRoutes(req, res, url, body) {
     try {
       const historyItems = db.store.history || [];
       const textToSend = body?.text || formatHistoryHtml(historyItems);
-      const targetChatId = body?.chatId || TELEGRAM_CONFIG.defaultChatId || "5490113240";
+      const targetChatId = body?.chatId || TELEGRAM_CONFIG.defaultChatId || "7032355691";
 
       const result = await sendTelegramMessage({
         chatId: targetChatId,
@@ -378,7 +410,7 @@ export async function handleTelegramRoutes(req, res, url, body) {
           title: "Telegram History Dispatched",
           subtitle: `Sent to @${TELEGRAM_CONFIG.botUsername}`,
           metric: "Delivered",
-          subMetric: `Chat ID: ${targetChatId || '5490113240'}`,
+          subMetric: `Chat ID: ${targetChatId || '7032355691'}`,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           date: "Today",
           icon: "activity"

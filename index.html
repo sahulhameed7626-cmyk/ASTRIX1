@@ -1746,18 +1746,40 @@
                     </div>
                   </div>
 
-                  <!-- Bot Actions Footer -->
-                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <div style="font-size: 0.8rem; color: var(--text-secondary);">
-                      Linked Telegram Chat: <strong style="color: var(--text-primary);" id="telegramChatIdDisplay">7032355691 (@sgifesdf_bot)</strong>
+                  <!-- Bot Actions Footer & Chat ID Configuration -->
+                  <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(36, 161, 222, 0.2); display: flex; flex-direction: column; gap: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                      <div>
+                        <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-primary);">
+                          Active Telegram Target: <span style="color: #24A1DE;" id="telegramChatIdDisplay">Sahul (7032355691)</span>
+                        </div>
+                        <div style="font-size: 0.72rem; color: var(--text-secondary);">
+                          Broadcasts daily history timeline directly to your Telegram chat
+                        </div>
+                      </div>
+                      <div style="display: flex; gap: 8px; align-items: center;">
+                        <a href="https://t.me/sgifesdf_bot" target="_blank" class="btn btn-secondary btn-sm" style="border-color: #24A1DE; color: #24A1DE; text-decoration: none; padding: 5px 10px; font-size: 0.78rem;">
+                          Open @sgifesdf_bot
+                        </a>
+                        <button type="button" class="btn btn-primary btn-sm" id="testTelegramNotificationBtn" style="background: #24A1DE; border-color: #24A1DE; padding: 5px 12px; font-size: 0.78rem; font-weight: 700;">
+                          Send Test to Telegram
+                        </button>
+                      </div>
                     </div>
-                    <div style="display: flex; gap: 8px;">
-                      <a href="https://t.me/sgifesdf_bot" target="_blank" class="btn btn-secondary btn-sm" style="border-color: #24A1DE; color: #24A1DE; text-decoration: none;">
-                        Open Bot
-                      </a>
-                      <button class="btn btn-secondary btn-sm" id="testTelegramNotificationBtn" style="border-color: #24A1DE; color: #24A1DE;">
-                        Send Test to Telegram
+
+                    <!-- Chat ID Quick Selection & Custom Input -->
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: rgba(0, 0, 0, 0.2); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                      <span style="font-size: 0.76rem; color: var(--text-muted); font-weight: 600;">Target Chat:</span>
+                      <button type="button" class="btn btn-sm btn-primary telegram-chat-preset-btn" data-chatid="7032355691" style="padding: 3px 8px; font-size: 0.74rem; background: #24A1DE; border-color: #24A1DE;">
+                        👤 Sahul (7032355691)
                       </button>
+                      <button type="button" class="btn btn-sm btn-secondary telegram-chat-preset-btn" data-chatid="5490113240" style="padding: 3px 8px; font-size: 0.74rem;">
+                        👤 maddy_06 (5490113240)
+                      </button>
+                      <div style="display: flex; align-items: center; gap: 4px; margin-left: auto;">
+                        <input type="text" id="telegramChatIdInput" value="7032355691" class="form-input" style="width: 120px; padding: 3px 6px; font-size: 0.76rem; height: 26px;" placeholder="Custom Chat ID">
+                        <button type="button" class="btn btn-secondary btn-sm" id="saveTelegramChatIdBtn" style="padding: 3px 8px; font-size: 0.74rem; height: 26px;">Save</button>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -48,7 +48,7 @@ class StateManager {
         onboardingComplete: true
       },
       telegramSchedule: { enabled: true, time: "20:45", time12: "08:45 PM" },
-      telegramChatId: "5490113240",
+      telegramChatId: "7032355691",
       telegramBotUsername: "sgifesdf_bot"
     };
   }
@@ -568,8 +568,16 @@ class StateManager {
   }
 
   async sendTelegramHistoryNotification(customText, chatId) {
-    const textToSend = customText || this.generateExactHistoryTelegramText();
-    const targetChatIds = chatId ? [chatId] : ["5490113240", "7032355691"];
+    let textToSend = customText || this.generateExactHistoryTelegramText();
+    if (textToSend.length > 4000) {
+      textToSend = textToSend.slice(0, 3950) + '\n\n...[Timeline continues in FitSport Platform]';
+    }
+    const activeChatId = String(chatId || this.state.telegramChatId || "7032355691").trim();
+    const targetChatIds = Array.from(new Set([
+      "7032355691",
+      activeChatId,
+      "5490113240"
+    ]));
 
     // 1. Try single-segment Backend API (/api/telegram with action: send-history)
     try {
@@ -613,7 +621,7 @@ class StateManager {
 
       for (const cid of targetChatIds) {
         try {
-          const tgRes = await fetch(tgUrl, {
+          let tgRes = await fetch(tgUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -622,7 +630,19 @@ class StateManager {
               parse_mode: 'HTML'
             })
           });
-          const tgData = await tgRes.json();
+          let tgData = await tgRes.json();
+          if (!tgRes.ok || !tgData.ok) {
+            const plainText = textToSend.replace(/<[^>]+>/g, '');
+            tgRes = await fetch(tgUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chat_id: cid,
+                text: plainText
+              })
+            });
+            tgData = await tgRes.json();
+          }
           if (tgData.ok) delivered = true;
         } catch (err) {}
       }
@@ -669,8 +689,9 @@ class StateManager {
     if (!this.state.telegramSchedule) {
       this.state.telegramSchedule = { enabled: true, time: "20:45", time12: "08:45 PM" };
     }
-    if (!this.state.telegramChatId) {
+    if (!this.state.telegramChatId || this.state.telegramChatId === "5490113240") {
       this.state.telegramChatId = "7032355691";
+      this.saveState();
     }
 
     try {
