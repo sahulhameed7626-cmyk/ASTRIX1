@@ -163,11 +163,24 @@ class FitSportApp {
 
     // Initial render
     this.renderAllDynamicComponents();
-    if (appState.state.auth?.isLoggedIn) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hashView = window.location.hash ? window.location.hash.replace("#", "") : "";
+    const requestedView = urlParams.get("view") || hashView;
+
+    if (requestedView) {
+      this.navigateTo(requestedView);
+    } else if (appState.state.auth?.isLoggedIn) {
       this.navigateTo("dashboard");
     } else {
       this.navigateTo("landing");
     }
+
+    window.addEventListener("hashchange", () => {
+      const newHash = window.location.hash ? window.location.hash.replace("#", "") : "";
+      if (newHash && newHash !== this.currentView) {
+        this.navigateTo(newHash);
+      }
+    });
   }
 
   showToast(message) {
