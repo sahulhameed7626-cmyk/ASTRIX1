@@ -2,7 +2,7 @@
   "user": {
     "id": "user_sahul_hameed",
     "name": "sahul",
-    "phone": "+91 6379048418",
+    "phone": "+91 33233020",
     "avatar": "SA",
     "height": 178,
     "currentWeight": 69.5,
@@ -25,81 +25,14 @@
     "fiberGoal": 35
   },
   "meals": {
-    "breakfast": [
-      {
-        "id": "m_1788804463215_99",
-        "foodId": "fru_apple_1",
-        "name": "Apple",
-        "category": "Fruit",
-        "grams": 50,
-        "calories": 26,
-        "protein": 0.2,
-        "carbs": 7,
-        "fat": 0.1,
-        "fiber": 1.2,
-        "iron": 0.06,
-        "keyVitamin": "Vit C 4.6mg"
-      },
-      {
-        "id": "m_1788804465866_639",
-        "foodId": "fru_apple_1",
-        "name": "Apple",
-        "category": "Fruit",
-        "grams": 50,
-        "calories": 26,
-        "protein": 0.2,
-        "carbs": 7,
-        "fat": 0.1,
-        "fiber": 1.2,
-        "iron": 0.06,
-        "keyVitamin": "Vit C 4.6mg"
-      },
-      {
-        "id": "m_1788804467360_459",
-        "foodId": "fru_apple_1",
-        "name": "Apple",
-        "category": "Fruit",
-        "grams": 50,
-        "calories": 26,
-        "protein": 0.2,
-        "carbs": 7,
-        "fat": 0.1,
-        "fiber": 1.2,
-        "iron": 0.06,
-        "keyVitamin": "Vit C 4.6mg"
-      },
-      {
-        "id": "m_1788804469341_268",
-        "foodId": "fru_apple_1",
-        "name": "Apple",
-        "category": "Fruit",
-        "grams": 50,
-        "calories": 26,
-        "protein": 0.2,
-        "carbs": 7,
-        "fat": 0.1,
-        "fiber": 1.2,
-        "iron": 0.06,
-        "keyVitamin": "Vit C 4.6mg"
-      }
-    ],
+    "breakfast": [],
     "lunch": [],
     "dinner": [],
     "snacks": []
   },
   "waterLogs": [],
   "workouts": [],
-  "sportsActivities": [
-    {
-      "id": "sp_1788804446977",
-      "sportId": "cycling",
-      "sportName": "Cycling",
-      "duration": 45,
-      "intensity": "Moderate",
-      "caloriesBurned": 378,
-      "completedAt": "11:37 PM"
-    }
-  ],
+  "sportsActivities": [],
   "reminders": [
     {
       "id": "r1",
@@ -156,63 +89,7 @@
       "active": false
     }
   ],
-  "history": [
-    {
-      "id": "h_1788804469341",
-      "type": "meals",
-      "title": "Breakfast: Apple",
-      "subtitle": "50g • Logged to meal tracker",
-      "metric": "26 kcal",
-      "subMetric": "0.2g Protein • 1.2g Fiber",
-      "time": "11:37 PM",
-      "date": "Today",
-      "icon": "apple"
-    },
-    {
-      "id": "h_1788804467360",
-      "type": "meals",
-      "title": "Breakfast: Apple",
-      "subtitle": "50g • Logged to meal tracker",
-      "metric": "26 kcal",
-      "subMetric": "0.2g Protein • 1.2g Fiber",
-      "time": "11:37 PM",
-      "date": "Today",
-      "icon": "apple"
-    },
-    {
-      "id": "h_1788804465866",
-      "type": "meals",
-      "title": "Breakfast: Apple",
-      "subtitle": "50g • Logged to meal tracker",
-      "metric": "26 kcal",
-      "subMetric": "0.2g Protein • 1.2g Fiber",
-      "time": "11:37 PM",
-      "date": "Today",
-      "icon": "apple"
-    },
-    {
-      "id": "h_1788804463215",
-      "type": "meals",
-      "title": "Breakfast: Apple",
-      "subtitle": "50g • Logged to meal tracker",
-      "metric": "26 kcal",
-      "subMetric": "0.2g Protein • 1.2g Fiber",
-      "time": "11:37 PM",
-      "date": "Today",
-      "icon": "apple"
-    },
-    {
-      "id": "h_1788804446977",
-      "type": "sports",
-      "title": "Sport: Cycling",
-      "subtitle": "Moderate intensity session logged",
-      "metric": "378 kcal burned",
-      "subMetric": "Duration: 45 min",
-      "time": "11:37 PM",
-      "date": "Today",
-      "icon": "bike"
-    }
-  ],
+  "history": [],
   "weightHistory": [
     {
       "date": "Week 1",

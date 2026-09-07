@@ -313,12 +313,67 @@ button, input, select, textarea {
   gap: 16px;
 }
 
+/* Mobile Sidebar Backdrop Overlay */
+.sidebar-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 1050;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mobile-sidebar-close {
+  display: none;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, transform 0.1s;
+}
+
+.mobile-sidebar-close:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--green-primary);
+}
+
 .mobile-menu-toggle {
   display: none;
-  background: none;
-  border: none;
-  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  color: var(--green-primary);
   cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
+}
+
+.mobile-menu-toggle:hover {
+  background: rgba(31, 182, 34, 0.12);
+  border-color: var(--green-primary);
+}
+
+.mobile-menu-toggle:active {
+  transform: scale(0.95);
 }
 
 .header-date-badge {
@@ -414,19 +469,59 @@ button, input, select, textarea {
 }
 
 @media (max-width: 768px) {
-  .app-sidebar {
-    display: none;
-  }
-  .app-main {
-    margin-left: 0;
-    padding-bottom: 74px; /* clearance for bottom nav */
-  }
-  .mobile-bottom-nav {
-    display: flex;
-  }
   .mobile-menu-toggle {
-    display: block;
+    display: flex !important;
   }
+
+  .mobile-sidebar-close {
+    display: flex !important;
+  }
+
+  /* Slide-out Mobile Sidebar Navigation Drawer showing ALL page icons */
+  .app-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 290px !important;
+    max-width: 85vw !important;
+    height: 100vh !important;
+    z-index: 1100 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: #0a110a !important;
+    border-right: 1px solid rgba(31, 182, 34, 0.3) !important;
+    box-shadow: 10px 0 45px rgba(0, 0, 0, 0.9) !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    overflow-y: auto !important;
+  }
+
+  .app-sidebar.mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  .app-main {
+    margin-left: 0 !important;
+    padding-bottom: 78px !important; /* clearance for bottom nav */
+  }
+
+  .mobile-bottom-nav {
+    display: flex !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 64px !important;
+    background: rgba(10, 15, 10, 0.96) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    border-top: 1px solid rgba(31, 182, 34, 0.25) !important;
+    z-index: 990 !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+    padding: 0 4px !important;
+  }
+
   .app-header {
     padding: 0 16px;
   }

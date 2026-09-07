@@ -240,6 +240,13 @@ class FitSportApp {
     const allScreens = document.querySelectorAll(".view-screen");
     allScreens.forEach(el => el.classList.remove("active-screen"));
 
+    // Auto-close mobile navigation drawer if open
+    const sidebar = document.getElementById("appSidebar");
+    const backdrop = document.getElementById("sidebarBackdrop");
+    sidebar?.classList.remove("mobile-open");
+    backdrop?.classList.remove("active");
+    document.body.style.overflow = "";
+
     const targetScreen = document.getElementById(`screen-${viewId}`);
     if (targetScreen) {
       targetScreen.classList.add("active-screen");
@@ -343,7 +350,53 @@ class FitSportApp {
   }
 
   bindNavigation() {
+    const sidebar = document.getElementById("appSidebar");
+    const backdrop = document.getElementById("sidebarBackdrop");
+    const mobileMenuBtn = document.getElementById("mobileMenuToggle");
+    const mobileCloseBtn = document.getElementById("mobileSidebarCloseBtn");
+    const mobileBottomMoreBtn = document.getElementById("mobileBottomMenuToggle");
+
+    const openMobileMenu = () => {
+      sidebar?.classList.add("mobile-open");
+      backdrop?.classList.add("active");
+      document.body.style.overflow = "hidden";
+    };
+
+    const closeMobileMenu = () => {
+      sidebar?.classList.remove("mobile-open");
+      backdrop?.classList.remove("active");
+      document.body.style.overflow = "";
+    };
+
+    // Toggle drawer on top 3-line hamburger menu button click
+    mobileMenuBtn?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (sidebar?.classList.contains("mobile-open")) {
+        closeMobileMenu();
+      } else {
+        openMobileMenu();
+      }
+    });
+
+    // Toggle drawer on bottom "All Pages" 3-line button click
+    mobileBottomMoreBtn?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openMobileMenu();
+    });
+
+    // Close button inside mobile drawer
+    mobileCloseBtn?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeMobileMenu();
+    });
+
+    // Clicking backdrop closes drawer
+    backdrop?.addEventListener("click", () => {
+      closeMobileMenu();
+    });
+
     document.getElementById("sidebarBrandClick")?.addEventListener("click", () => {
+      closeMobileMenu();
       this.navigateTo("landing");
     });
 
@@ -351,9 +404,8 @@ class FitSportApp {
       link.addEventListener("click", (e) => {
         const view = link.getAttribute("data-view");
         if (view) {
+          closeMobileMenu();
           this.navigateTo(view);
-          const sidebar = document.querySelector(".app-sidebar");
-          sidebar?.classList.remove("open-sidebar");
         }
       });
     });
@@ -362,12 +414,14 @@ class FitSportApp {
       link.addEventListener("click", () => {
         const view = link.getAttribute("data-view");
         if (view) {
+          closeMobileMenu();
           this.navigateTo(view);
         }
       });
     });
 
     document.getElementById("sidebarUserCard")?.addEventListener("click", () => {
+      closeMobileMenu();
       this.navigateTo("profile");
     });
 
