@@ -50,64 +50,23 @@ const DEFAULT_STORE = {
     targetDurationMonths: 3,
     interestedSports: ["Cycling", "Football", "Badminton", "Running"],
     fitnessGoal: "Improve Sports Performance",
-    calorieGoal: 2200,
-    proteinGoal: 120,
-    carbsGoal: 250,
-    fatGoal: 65,
+    calorieGoal: 2063,
+    proteinGoal: 130,
+    carbsGoal: 258,
+    fatGoal: 57,
     waterGoal: 3500,
     ironGoal: 18,
     fiberGoal: 35
   },
   meals: {
-    breakfast: [
-      { id: "m_b1", foodId: "fru_apple_1", name: "Apple", grams: 100, calories: 52, protein: 0.3, carbs: 14.0, fat: 0.2, fiber: 2.4, iron: 0.12, keyVitamin: "Vit C 9.2mg" },
-      { id: "m_b2", name: "Oats with Water & Chia", grams: 50, calories: 180, protein: 6.0, carbs: 32.0, fat: 3.2, fiber: 5.0, iron: 2.1, keyVitamin: "Vit B1" },
-      { id: "m_b3", foodId: "dai_greek_yogurt_174", name: "Greek Yogurt", grams: 150, calories: 88.5, protein: 15.0, carbs: 5.4, fat: 0.4, fiber: 0, iron: 0.06, keyVitamin: "Vit B12" }
-    ],
-    lunch: [
-      { id: "m_l1", foodId: "veg_spinach_69", name: "Spinach (Steamed)", grams: 100, calories: 23, protein: 2.9, carbs: 3.6, fat: 0.4, fiber: 2.2, iron: 2.7, keyVitamin: "Vit A 938mcg" },
-      { id: "m_l2", name: "Grilled Chicken Breast", grams: 150, calories: 248, protein: 46.5, carbs: 0, fat: 5.4, fiber: 0, iron: 1.5, keyVitamin: "Vit B6" },
-      { id: "m_l3", name: "Steamed White Rice", grams: 150, calories: 195, protein: 4.0, carbs: 42.0, fat: 0.5, fiber: 0.6, iron: 1.2, keyVitamin: "Vit B1" }
-    ],
-    dinner: [
-      { id: "m_d1", foodId: "dai_paneer_177", name: "Paneer (Grilled)", grams: 100, calories: 265, protein: 18.3, carbs: 1.2, fat: 20.8, fiber: 0, iron: 0.2, keyVitamin: "Calcium" },
-      { id: "m_d2", foodId: "veg_broccoli_70", name: "Broccoli (Steamed)", grams: 150, calories: 51, protein: 4.2, carbs: 9.9, fat: 0.6, fiber: 3.9, iron: 1.1, keyVitamin: "Vit C 267.6mg" },
-      { id: "m_d3", name: "Brown Rice", grams: 100, calories: 130, protein: 2.7, carbs: 28.0, fat: 0.3, fiber: 1.8, iron: 0.8, keyVitamin: "Magnesium" }
-    ],
-    snacks: [
-      { id: "m_s1", foodId: "nut_almonds_137", name: "Almonds", grams: 30, calories: 173.7, protein: 6.36, carbs: 6.48, fat: 15.0, fiber: 3.75, iron: 1.11, keyVitamin: "Vit E 15.36mg" },
-      { id: "m_s2", foodId: "fru_banana_2", name: "Banana", grams: 100, calories: 89, protein: 1.1, carbs: 23.0, fat: 0.3, fiber: 2.6, iron: 0.26, keyVitamin: "Vit C 17.4mg" }
-    ]
+    breakfast: [],
+    lunch: [],
+    dinner: [],
+    snacks: []
   },
-  waterLogs: [
-    { id: "w_1", time: "08:00 AM", amount: 250 },
-    { id: "w_2", time: "10:00 AM", amount: 500 },
-    { id: "w_3", time: "12:30 PM", amount: 500 },
-    { id: "w_4", time: "03:00 PM", amount: 500 },
-    { id: "w_5", time: "05:15 PM", amount: 650 }
-  ],
-  workouts: [
-    {
-      id: "wk_1",
-      title: "Leg Strength Foundations",
-      category: "Equipment Workouts",
-      subCategory: "Beginner",
-      duration: 30,
-      caloriesBurned: 220,
-      completedAt: "05:30 PM"
-    }
-  ],
-  sportsActivities: [
-    {
-      id: "sp_1",
-      sportId: "cycling",
-      sportName: "Cycling",
-      duration: 45,
-      intensity: "Moderate",
-      caloriesBurned: 380,
-      completedAt: "07:00 PM"
-    }
-  ],
+  waterLogs: [],
+  workouts: [],
+  sportsActivities: [],
   reminders: [
     { id: "r1", title: "Breakfast", time: "08:00 AM", repeat: "Everyday", type: "meal", icon: "apple", active: true },
     { id: "r2", title: "Lunch", time: "01:00 PM", repeat: "Everyday", type: "meal", icon: "apple", active: true },
@@ -168,7 +127,7 @@ const DEFAULT_STORE = {
       metric: "220 kcal burned",
       subMetric: "Duration: 30 min • 4 Exercises",
       time: "05:30 PM",
-      date: "Today",
+      date: "Yesterday",
       icon: "dumbbell"
     },
     {
@@ -179,7 +138,7 @@ const DEFAULT_STORE = {
       metric: "380 kcal burned",
       subMetric: "Duration: 45 min • 85% Quad Load",
       time: "07:00 PM",
-      date: "Today",
+      date: "Yesterday",
       icon: "bike"
     },
     {

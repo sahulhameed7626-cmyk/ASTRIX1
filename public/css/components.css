@@ -1092,6 +1092,7 @@
   height: 100%;
   border-radius: 10px;
   background: #333333;
+  transition: width 0.4s ease;
 }
 
 .sport-bar-fill.active {

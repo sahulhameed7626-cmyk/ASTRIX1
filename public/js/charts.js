@@ -94,45 +94,80 @@ export function renderHydrationGauge(container, currentMl = 2400, targetMl = 350
 }
 
 
-export function renderWeeklyCaloriesChart(container) {
-  const days = [
-    { day: "Mon", consumed: 2100, burned: 650 },
-    { day: "Tue", consumed: 1950, burned: 580 },
-    { day: "Wed", consumed: 2250, burned: 720 },
-    { day: "Thu", consumed: 1880, burned: 490 },
-    { day: "Fri", consumed: 2050, burned: 810 },
-    { day: "Sat", consumed: 2400, burned: 920 },
-    { day: "Sun", consumed: 1850, burned: 600 }
+export function renderWeeklyCaloriesChart(container, todayConsumed = 0, todayBurned = 0, targetCalories = 2063) {
+  if (!container) return;
+
+  const dayAbbrs = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const todayDayIndex = new Date().getDay();
+  const todayAbbr = dayAbbrs[todayDayIndex];
+
+  // All days start DOWN at 0 kcal upon reset / initial clean slate
+  const defaultWeek = [
+    { day: "Mon", consumed: 0, burned: 0 },
+    { day: "Tue", consumed: 0, burned: 0 },
+    { day: "Wed", consumed: 0, burned: 0 },
+    { day: "Thu", consumed: 0, burned: 0 },
+    { day: "Fri", consumed: 0, burned: 0 },
+    { day: "Sat", consumed: 0, burned: 0 },
+    { day: "Sun", consumed: 0, burned: 0 }
   ];
 
-  const maxVal = 2600;
+  // Dynamically map Today's column with live consumed & burned calories
+  const days = defaultWeek.map(item => {
+    if (item.day === todayAbbr) {
+      return {
+        day: `${item.day} (Today)`,
+        consumed: Math.max(0, Math.round(todayConsumed)),
+        burned: Math.max(0, Math.round(todayBurned)),
+        isToday: true
+      };
+    }
+    return item;
+  });
+
+  const maxVal = Math.max(targetCalories || 2063, todayConsumed * 1.25, todayBurned * 1.5, 1200);
   const height = 200;
 
   const barsHtml = days.map(d => {
-    const consumedH = (d.consumed / maxVal) * height;
-    const burnedH = (d.burned / maxVal) * height;
+    const consumedH = d.consumed > 0 ? Math.min(height, Math.max(6, Math.round((d.consumed / maxVal) * height))) : 0;
+    const burnedH = d.burned > 0 ? Math.min(height, Math.max(6, Math.round((d.burned / maxVal) * height))) : 0;
+    const isTodayCol = d.isToday;
+    const isDown = d.consumed === 0 && d.burned === 0;
 
     return `
-      <div class="chart-col">
-        <div class="bar-pair">
-          <div class="bar bar-consumed" style="height: ${consumedH}px;" title="Consumed: ${d.consumed} kcal"></div>
-          <div class="bar bar-burned" style="height: ${burnedH}px;" title="Burned: ${d.burned} kcal"></div>
+      <div class="chart-col ${isTodayCol ? 'chart-col-today' : ''}" style="${isTodayCol ? 'background: rgba(31, 182, 34, 0.08); border-radius: 8px; padding: 4px 6px;' : ''}">
+        <div class="bar-pair" style="display: flex; gap: 4px; align-items: flex-end; justify-content: center; height: ${height}px; width: 100%; position: relative;">
+          ${isDown ? `
+            <div style="position: absolute; bottom: 0; width: 80%; height: 3px; background: rgba(255, 255, 255, 0.08); border-radius: 2px;" title="${d.day}: Down at 0 kcal (No intake/burn yet)"></div>
+          ` : ''}
+          <div class="bar bar-consumed" style="height: ${consumedH}px; width: 14px; transition: height 0.4s ease; ${consumedH === 0 ? 'opacity: 0;' : ''} ${isTodayCol ? 'box-shadow: 0 0 12px rgba(207, 240, 197, 0.4);' : ''}" title="${d.day} Consumed: ${d.consumed} kcal"></div>
+          <div class="bar bar-burned" style="height: ${burnedH}px; width: 14px; transition: height 0.4s ease; ${burnedH === 0 ? 'opacity: 0;' : ''} ${isTodayCol ? 'box-shadow: 0 0 12px rgba(31, 182, 34, 0.6);' : ''}" title="${d.day} Burned: ${d.burned} kcal"></div>
         </div>
-        <div class="col-label">${d.day}</div>
+        <div class="col-label" style="${isTodayCol ? 'color: var(--green-primary); font-weight: 800;' : 'color: var(--text-secondary);'}">${d.day}</div>
       </div>
     `;
   }).join('');
 
+  const isAllDown = todayConsumed === 0 && todayBurned === 0;
+  const subtitleText = isAllDown
+    ? "All daily analytics down at 0 kcal • Increases dynamically as you consume food or burn calories today"
+    : `Today: ${Math.round(todayConsumed).toLocaleString()} kcal in / ${Math.round(todayBurned).toLocaleString()} kcal burned (Live)`;
+
   container.innerHTML = `
     <div class="chart-card">
-      <div class="chart-header">
+      <div class="chart-header" style="flex-wrap: wrap; gap: 10px;">
         <div>
-          <h4 class="chart-title">Weekly Energy Balance</h4>
-          <span class="chart-subtitle">Calories Consumed vs Calories Burned</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h4 class="chart-title" style="margin: 0;">Weekly Energy Balance (Live Analytics)</h4>
+            <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; ${isAllDown ? 'background: rgba(255,255,255,0.06); color: #888;' : 'background: rgba(31, 182, 34, 0.15); color: var(--green-primary); border: 1px solid var(--green-primary);'}">
+              ${isAllDown ? '● DOWN AT 0' : '● INCREASING LIVE'}
+            </span>
+          </div>
+          <span class="chart-subtitle">${subtitleText}</span>
         </div>
         <div class="chart-legend">
-          <span class="legend-item"><span class="legend-box" style="background: #CFF0C5;"></span> Consumed</span>
-          <span class="legend-item"><span class="legend-box" style="background: #1FB622;"></span> Burned</span>
+          <span class="legend-item"><span class="legend-box" style="background: #CFF0C5;"></span> Consumed (${Math.round(todayConsumed).toLocaleString()} kcal today)</span>
+          <span class="legend-item"><span class="legend-box" style="background: #1FB622;"></span> Burned (${Math.round(todayBurned).toLocaleString()} kcal today)</span>
         </div>
       </div>
       <div class="bar-chart-container" style="height: ${height + 40}px;">

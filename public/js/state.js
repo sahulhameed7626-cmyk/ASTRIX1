@@ -23,34 +23,168 @@ class StateManager {
     this.syncWithBackend();
   }
 
+  // --- Caloric Target & Maintenance Engine (1 kg = 7,700 kcal Rule) ---
+  calculateEnergyMetrics(userOverride = null) {
+    const user = userOverride || this.state?.user || {};
+    const height = parseFloat(user.height) || 178;
+    const currentWeight = parseFloat(user.currentWeight) || 69.5;
+    const targetWeight = parseFloat(user.targetWeight) || 65.0;
+    const targetMonths = parseInt(user.targetDurationMonths, 10) || 3;
+    const age = parseInt(user.age, 10) || 25;
+
+    // Basal Metabolic Rate (BMR) - Mifflin-St Jeor formula
+    const bmr = Math.round((10 * currentWeight) + (6.25 * height) - (5 * age) + 5);
+
+    // Total Daily Energy Expenditure (Maintenance TDEE at moderate athletic activity: 1.45)
+    const maintenanceCalories = Math.round(bmr * 1.45);
+
+    // Weight difference in kg (target - current)
+    const weightDiff = Math.round((targetWeight - currentWeight) * 10) / 10;
+    const totalDays = Math.max(15, targetMonths * 30);
+    // 1 kg of body weight = 7,700 kcal
+    const totalCalorieAdjustment = Math.round(Math.abs(weightDiff) * 7700);
+    const dailyAdjustment = Math.round(totalCalorieAdjustment / totalDays);
+
+    let dailyCalorieGoal;
+    let goalType = "maintain";
+
+    if (weightDiff < -0.1) {
+      // Weight Loss: Target calorie deficit below maintenance
+      goalType = "loss";
+      dailyCalorieGoal = Math.max(1200, maintenanceCalories - dailyAdjustment);
+    } else if (weightDiff > 0.1) {
+      // Weight Gain: Target calorie surplus above maintenance
+      goalType = "gain";
+      dailyCalorieGoal = maintenanceCalories + dailyAdjustment;
+    } else {
+      // Maintain Current Weight
+      goalType = "maintain";
+      dailyCalorieGoal = maintenanceCalories;
+    }
+
+    // Setted weight: targetWeight if specified, otherwise current entered weight
+    const setWeight = parseFloat(user.targetWeight) || parseFloat(user.currentWeight) || 70;
+
+    // High-protein athletic standard (2.0g per kg of setted weight)
+    const proteinGoal = Math.round(setWeight * 2.0);
+    // Healthy fats: 25% of daily calories (9 kcal/g)
+    const fatGoal = Math.round((dailyCalorieGoal * 0.25) / 9);
+    // Carbohydrates: remainder of daily calories (4 kcal/g)
+    const carbsGoal = Math.max(50, Math.round((dailyCalorieGoal - (proteinGoal * 4) - (fatGoal * 9)) / 4));
+    const waterGoal = 3500;
+
+    // Daily workout burn target to maintain target trajectory
+    const dailyBurnTarget = goalType === "loss"
+      ? Math.round(dailyAdjustment + 250)
+      : Math.round(dailyAdjustment + 350);
+
+    return {
+      bmr,
+      maintenanceCalories,
+      weightDiff,
+      totalCalorieAdjustment,
+      totalDays,
+      dailyAdjustment,
+      goalType,
+      dailyCalorieGoal,
+      setWeight,
+      proteinGoal,
+      fatGoal,
+      carbsGoal,
+      waterGoal,
+      dailyBurnTarget
+    };
+  }
+
   loadInitialState() {
+    const isSessionActive = typeof sessionStorage !== "undefined" && sessionStorage.getItem("fitsport_session_active") === "true";
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (!parsed.auth) parsed.auth = {};
+        parsed.auth.isLoggedIn = isSessionActive;
+        if (parsed.user) {
+          const metrics = this.calculateEnergyMetrics(parsed.user);
+          parsed.user.calorieGoal = metrics.dailyCalorieGoal;
+          parsed.user.maintenanceCalories = metrics.maintenanceCalories;
+          parsed.user.dailyCalorieAdjustment = metrics.dailyAdjustment;
+          parsed.user.dailyBurnTarget = metrics.dailyBurnTarget;
+          parsed.user.proteinGoal = metrics.proteinGoal;
+          parsed.user.fatGoal = metrics.fatGoal;
+          parsed.user.carbsGoal = metrics.carbsGoal;
+        }
+
+        // DAILY TRACKING RESET ON LOAD: Each load resets workout, nutrition, water intake, and today's activity to 0
+        parsed.meals = { breakfast: [], lunch: [], dinner: [], snacks: [] };
+        parsed.waterLogs = [];
+        parsed.workouts = [];
+        parsed.sportsActivities = [];
+        if (Array.isArray(parsed.history)) {
+          parsed.history = parsed.history.filter(h => h.date !== "Today");
+        }
+        parsed.activeWorkoutSession = null;
+        if (!parsed.autoResetSchedule) {
+          parsed.autoResetSchedule = { enabled: true, time: "00:00", time12: "12:00 AM", lastResetDate: "" };
+        }
+        return parsed;
       }
     } catch (e) {
       console.warn("Could not load from localStorage", e);
     }
+
+    const initialUser = { ...INITIAL_USER };
+    const metrics = this.calculateEnergyMetrics(initialUser);
+    initialUser.calorieGoal = metrics.dailyCalorieGoal;
+    initialUser.maintenanceCalories = metrics.maintenanceCalories;
+    initialUser.dailyCalorieAdjustment = metrics.dailyAdjustment;
+    initialUser.dailyBurnTarget = metrics.dailyBurnTarget;
+    initialUser.proteinGoal = metrics.proteinGoal;
+    initialUser.fatGoal = metrics.fatGoal;
+    initialUser.carbsGoal = metrics.carbsGoal;
+
     return {
-      user: { ...INITIAL_USER },
-      meals: JSON.parse(JSON.stringify(INITIAL_MEALS)),
-      waterLogs: [...INITIAL_WATER_LOGS],
+      user: initialUser,
+      meals: { breakfast: [], lunch: [], dinner: [], snacks: [] },
+      waterLogs: [],
       history: [...INITIAL_HISTORY],
       reminders: [...INITIAL_REMINDERS],
       weightHistory: [...WEIGHT_JOURNEY_HISTORY],
       mostPlayedSports: [...MOST_PLAYED_SPORTS],
       selectedSportId: "cycling",
-      selectedWorkoutId: "hw-beg",
+      selectedWorkoutId: "hw-pushups",
       activeWorkoutSession: null,
       auth: {
-        isLoggedIn: true,
+        isLoggedIn: isSessionActive,
         onboardingComplete: true
       },
+      autoResetSchedule: { enabled: true, time: "00:00", time12: "12:00 AM", lastResetDate: "" },
       telegramSchedule: { enabled: true, time: "20:45", time12: "08:45 PM" },
       telegramChatId: "7032355691",
       telegramBotUsername: "sgifesdf_bot"
     };
+  }
+
+  setLoggedIn(status) {
+    if (!this.state.auth) {
+      this.state.auth = { isLoggedIn: false, onboardingComplete: true };
+    }
+    this.state.auth.isLoggedIn = !!status;
+    if (typeof sessionStorage !== "undefined") {
+      if (status) {
+        sessionStorage.setItem("fitsport_session_active", "true");
+      } else {
+        sessionStorage.removeItem("fitsport_session_active");
+      }
+    }
+    this.saveState();
+  }
+
+  isSessionLoggedIn() {
+    if (typeof sessionStorage !== "undefined") {
+      return sessionStorage.getItem("fitsport_session_active") === "true";
+    }
+    return !!this.state.auth?.isLoggedIn;
   }
 
   addHistoryItem(item) {
@@ -94,7 +228,16 @@ class StateManager {
   // --- Backend REST API Synchronization ---
   async syncWithBackend() {
     try {
-      // 1. Fetch complete Nutrition Dataset from backend (207 items from PDF)
+      // 1. Clear backend daily trackers on page load to ensure fresh 0 slate
+      try {
+        await fetch('/api/reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'daily' })
+        });
+      } catch (e) {}
+
+      // 2. Fetch complete Nutrition Dataset from backend (207 items from PDF)
       const nutRes = await fetch('/api/nutrition');
       if (nutRes.ok) {
         const nutData = await nutRes.json();
@@ -142,7 +285,14 @@ class StateManager {
       if (userRes.ok) {
         const userData = await userRes.json();
         if (userData.user) {
-          this.state.user = userData.user;
+          this.state.user = { ...this.state.user, ...userData.user };
+          const metrics = this.calculateEnergyMetrics(this.state.user);
+          this.state.user.calorieGoal = metrics.dailyCalorieGoal;
+          this.state.user.maintenanceCalories = metrics.maintenanceCalories;
+          this.state.user.dailyCalorieAdjustment = metrics.dailyAdjustment;
+          this.state.user.proteinGoal = metrics.proteinGoal;
+          this.state.user.fatGoal = metrics.fatGoal;
+          this.state.user.carbsGoal = metrics.carbsGoal;
         }
       }
 
@@ -475,6 +625,17 @@ class StateManager {
       const todayEntry = this.state.weightHistory[this.state.weightHistory.length - 1];
       if (todayEntry) todayEntry.weight = updatedFields.currentWeight;
     }
+
+    // Recalculate 1 kg = 7,700 kcal targets
+    const metrics = this.calculateEnergyMetrics(this.state.user);
+    this.state.user.calorieGoal = metrics.dailyCalorieGoal;
+    this.state.user.maintenanceCalories = metrics.maintenanceCalories;
+    this.state.user.dailyCalorieAdjustment = metrics.dailyAdjustment;
+    this.state.user.dailyBurnTarget = metrics.dailyBurnTarget;
+    this.state.user.proteinGoal = metrics.proteinGoal;
+    this.state.user.fatGoal = metrics.fatGoal;
+    this.state.user.carbsGoal = metrics.carbsGoal;
+
     this.saveState();
 
     try {
@@ -486,7 +647,14 @@ class StateManager {
       if (res.ok) {
         const data = await res.json();
         if (data && data.user) {
-          this.state.user = { ...this.state.user, ...data.user };
+          this.state.user = {
+            ...this.state.user,
+            ...data.user,
+            calorieGoal: metrics.dailyCalorieGoal,
+            proteinGoal: metrics.proteinGoal,
+            fatGoal: metrics.fatGoal,
+            carbsGoal: metrics.carbsGoal
+          };
           this.saveState();
         }
       }
@@ -526,12 +694,26 @@ class StateManager {
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
     
+    const nut = this.getNutritionTotals();
+    const burned = this.getCaloriesBurnedToday();
+    const netCalories = Math.max(0, nut.calories - burned);
+    const targetCalories = this.state.user?.calorieGoal || 2063;
+    const completionPct = Math.min(100, Math.round((nut.calories / targetCalories) * 100));
+
+    const calorieSummaryText = 
+      `🎯 <b>Targeted Calories:</b> ${targetCalories.toLocaleString()} kcal\n` +
+      `🍽️ <b>Completed Calories (Meals):</b> ${nut.calories.toLocaleString()} kcal\n` +
+      `🔥 <b>Completed Burn:</b> ${burned.toLocaleString()} kcal\n` +
+      `⚡ <b>Completed Net:</b> ${netCalories.toLocaleString()} kcal (${completionPct}% of Target)\n`;
+
     if (history.length === 0) {
       return `🏆 <b>FITSPORT — Activity History Timeline</b>\n` +
         `👤 <b>Athlete:</b> ${athlete}\n` +
         `📅 <b>Date:</b> ${dateStr}\n` +
         `━━━━━━━━━━━━━━━━━━━━━━\n` +
-        `<i>Status: No activity items logged yet. Timeline is reset.</i>\n` +
+        `${calorieSummaryText}` +
+        `━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `<i>Status: No activity items logged yet today. Timeline is fresh.</i>\n` +
         `━━━━━━━━━━━━━━━━━━━━━━\n` +
         `💪 <i>Train Smarter. Eat Better. Play Stronger.</i>\n` +
         `<i>FitSport Performance Platform</i>`;
@@ -560,6 +742,8 @@ class StateManager {
       `👤 <b>Athlete:</b> ${athlete}\n` +
       `📅 <b>Date:</b> ${dateStr}\n` +
       `📊 <b>Total Logged Activities:</b> ${history.length}\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `${calorieSummaryText}` +
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
       `${itemsFormatted}\n` +
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -762,6 +946,9 @@ class StateManager {
 
   // --- Reset Methods for All Trackers ---
   resetAll() {
+    if (typeof sessionStorage !== "undefined") {
+      sessionStorage.removeItem("fitsport_session_active");
+    }
     localStorage.removeItem(STORAGE_KEY);
     this.state = this.loadInitialState();
     this.saveState();
@@ -774,12 +961,15 @@ class StateManager {
     } catch (e) {}
   }
 
-  resetDailyTrackers() {
+  resetDailyTrackers(isSilent = false) {
     this.state.meals = { breakfast: [], lunch: [], dinner: [], snacks: [] };
     this.state.waterLogs = [];
     this.state.workouts = [];
     this.state.sportsActivities = [];
-    this.state.history = [];
+    if (Array.isArray(this.state.history)) {
+      this.state.history = this.state.history.filter(h => h.date !== "Today");
+    }
+    this.state.activeWorkoutSession = null;
     this.saveState();
     try {
       fetch('/api/reset', {
@@ -788,6 +978,45 @@ class StateManager {
         body: JSON.stringify({ type: 'daily' })
       }).catch(() => {});
     } catch (e) {}
+    if (!isSilent) {
+      this.notify();
+    }
+  }
+
+  getAutoResetSchedule() {
+    if (!this.state.autoResetSchedule) {
+      this.state.autoResetSchedule = {
+        enabled: true,
+        time: "00:00",
+        time12: "12:00 AM",
+        lastResetDate: ""
+      };
+    }
+    return this.state.autoResetSchedule;
+  }
+
+  updateAutoResetSchedule(settings = {}) {
+    const current = this.getAutoResetSchedule();
+    const newEnabled = settings.enabled !== undefined ? !!settings.enabled : current.enabled;
+    const newTime = settings.time || current.time || "00:00";
+
+    const parts = newTime.split(":");
+    let hh = parseInt(parts[0], 10) || 0;
+    const mm = parts[1] || "00";
+    const ampm = hh >= 12 ? "PM" : "AM";
+    const hh12 = hh % 12 === 0 ? 12 : hh % 12;
+    const time12 = `${String(hh12).padStart(2, '0')}:${mm} ${ampm}`;
+
+    this.state.autoResetSchedule = {
+      enabled: newEnabled,
+      time: newTime,
+      time12: time12,
+      lastResetDate: settings.lastResetDate !== undefined ? settings.lastResetDate : (current.lastResetDate || "")
+    };
+
+    this.saveState();
+    this.notify();
+    return this.state.autoResetSchedule;
   }
 
   resetHistory() {

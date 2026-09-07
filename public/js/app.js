@@ -133,6 +133,9 @@ class FitSportApp {
   }
 
   async init() {
+    // Reset all workouts, nutrition, and water intake on each web load to 0 clean slate
+    appState.resetDailyTrackers(true);
+
     this.bindNavigation();
     this.bindHeaderActions();
     this.bindOnboarding();
@@ -147,7 +150,9 @@ class FitSportApp {
     this.bindTelegramSchedule();
     this.bindProfileAndSettings();
     this.bindWeightControls();
+    this.bindAutoResetModal();
     this.startAlarmClockWatcher();
+    this.startAutoResetWatcher();
 
     // Subscribe to state updates
     appState.subscribe(() => {
@@ -167,12 +172,23 @@ class FitSportApp {
     const hashView = window.location.hash ? window.location.hash.replace("#", "") : "";
     const requestedView = urlParams.get("view") || hashView;
 
+    const isAuthed = appState.isSessionLoggedIn();
+    const publicScreens = ["login", "landing", "onboarding", "logout"];
+
     if (requestedView) {
-      this.navigateTo(requestedView);
-    } else if (appState.state.auth?.isLoggedIn) {
+      if (publicScreens.includes(requestedView)) {
+        this.navigateTo(requestedView);
+      } else if (isAuthed) {
+        this.navigateTo(requestedView);
+      } else {
+        this.showToast("Please setup your profile or sign in to access FitSport.");
+        this.navigateTo("onboarding");
+      }
+    } else if (isAuthed) {
       this.navigateTo("dashboard");
     } else {
-      this.navigateTo("landing");
+      // Begin from Setup New Profile each time opening
+      this.navigateTo("onboarding");
     }
 
     window.addEventListener("hashchange", () => {
@@ -199,10 +215,22 @@ class FitSportApp {
   // Navigation & View Routing
   // --------------------------------------------------------------------------
   navigateTo(viewId) {
+    const publicScreens = ["login", "landing", "onboarding", "logout"];
+    if (!publicScreens.includes(viewId) && !appState.isSessionLoggedIn()) {
+      this.showToast("Please setup your profile or sign in to access FitSport.");
+      viewId = "onboarding";
+    }
+
+    if (viewId === "logout") {
+      appState.setLoggedIn(false);
+      this.renderLogoutScreen();
+      this.showToast("Logged out successfully.");
+    }
+
     this.currentView = viewId;
 
     const appLayout = document.getElementById("appLayout");
-    if (viewId === "login" || viewId === "onboarding") {
+    if (viewId === "login" || viewId === "onboarding" || viewId === "logout") {
       appLayout?.classList.add("auth-mode");
     } else {
       appLayout?.classList.remove("auth-mode");
@@ -267,10 +295,14 @@ class FitSportApp {
       this.populateOnboardingForm();
     }
     if (viewId === "login") {
-      const loginName = document.getElementById("loginName");
-      if (loginName) loginName.value = appState.state.user.name || "Sahul Hameed";
-      const loginPhone = document.getElementById("loginPhone");
-      if (loginPhone) loginPhone.value = (appState.state.user.phone || "").replace(/^\+91\s*/, "") || "9999988888";
+      const loginExistingName = document.getElementById("loginExistingName");
+      if (loginExistingName) loginExistingName.value = "";
+      const loginExistingPhone = document.getElementById("loginExistingPhone");
+      if (loginExistingPhone) loginExistingPhone.value = "";
+      const regName = document.getElementById("regName");
+      if (regName) regName.value = "";
+      const regPhone = document.getElementById("regPhone");
+      if (regPhone) regPhone.value = "";
     }
     if (viewId === "analytics") {
       this.renderAnalyticsCharts();
@@ -288,6 +320,25 @@ class FitSportApp {
       if (typeof this.updateTelegramScheduleUI === "function") {
         this.updateTelegramScheduleUI();
       }
+    }
+    if (viewId === "logout") {
+      this.renderLogoutScreen();
+    }
+  }
+
+  renderLogoutScreen() {
+    const user = appState.state.user || {};
+    const avatarEl = document.getElementById("logoutAvatar");
+    if (avatarEl) {
+      avatarEl.textContent = user.avatar || "SH";
+    }
+    const nameEl = document.getElementById("logoutUserName");
+    if (nameEl) {
+      nameEl.textContent = user.name || "Sahul Hameed";
+    }
+    const phoneEl = document.getElementById("logoutUserPhone");
+    if (phoneEl) {
+      phoneEl.textContent = user.phone || "+91 98765 43210";
     }
   }
 
@@ -368,6 +419,10 @@ class FitSportApp {
       this.openAddFoodModal("lunch");
     });
 
+    document.getElementById("headerLogoutBtn")?.addEventListener("click", () => {
+      this.navigateTo("logout");
+    });
+
     document.getElementById("landingCtaStart")?.addEventListener("click", () => {
       this.navigateTo("onboarding");
     });
@@ -378,29 +433,123 @@ class FitSportApp {
       this.navigateTo("login");
     });
 
-    document.getElementById("loginSubmitBtn")?.addEventListener("click", async () => {
-      const name = (document.getElementById("loginName")?.value || "").trim() || appState.state.user.name || "Sahul Hameed";
-      const rawPhone = (document.getElementById("loginPhone")?.value || "9876543210").trim();
+    // Auth Mode Toggles (Sign In vs Create Account)
+    const switchAuthMode = (mode) => {
+      const tabSignIn = document.getElementById("authTabSignIn");
+      const tabRegister = document.getElementById("authTabRegister");
+      const containerSignIn = document.getElementById("authSignInContainer");
+      const containerRegister = document.getElementById("authCreateAccountContainer");
+
+      if (mode === "register") {
+        tabRegister?.classList.add("active");
+        tabSignIn?.classList.remove("active");
+        if (containerRegister) containerRegister.style.display = "block";
+        if (containerSignIn) containerSignIn.style.display = "none";
+      } else {
+        tabSignIn?.classList.add("active");
+        tabRegister?.classList.remove("active");
+        if (containerSignIn) containerSignIn.style.display = "block";
+        if (containerRegister) containerRegister.style.display = "none";
+      }
+    };
+
+    document.getElementById("authTabSignIn")?.addEventListener("click", () => switchAuthMode("signin"));
+    document.getElementById("authTabRegister")?.addEventListener("click", () => switchAuthMode("register"));
+    document.getElementById("linkSwitchToRegister")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      switchAuthMode("register");
+    });
+    document.getElementById("linkSwitchToSignIn")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      switchAuthMode("signin");
+    });
+
+    document.getElementById("regToGuidedOnboardingBtn")?.addEventListener("click", () => {
+      this.navigateTo("onboarding");
+    });
+
+    // 1. SIGN IN SUBMIT (If we have an account)
+    document.getElementById("loginSignInSubmitBtn")?.addEventListener("click", async () => {
+      const name = (document.getElementById("loginExistingName")?.value || "").trim();
+      const rawPhone = (document.getElementById("loginExistingPhone")?.value || "").trim();
+
+      if (!name && !rawPhone) {
+        this.showToast("Please enter your Athlete Name or Phone Number to sign in.");
+        document.getElementById("loginExistingName")?.focus();
+        return;
+      }
+
+      const phone = rawPhone ? (rawPhone.startsWith("+") ? rawPhone : `+91 ${rawPhone}`) : "";
+      const currentUser = appState.state.user || {};
+      const finalName = name || currentUser.name || "Athlete";
+      const finalPhone = phone || currentUser.phone || "+91 99999 88888";
+
+      await appState.updateUserProfile({
+        name: finalName,
+        phone: finalPhone
+      });
+
+      appState.setLoggedIn(true);
+      this.renderAllDynamicComponents();
+      this.showToast(`Welcome back, ${finalName}! Signed in successfully.`);
+      this.navigateTo("dashboard");
+    });
+
+    // 2. CREATE ACCOUNT SUBMIT (If we do not have an account)
+    document.getElementById("loginRegisterSubmitBtn")?.addEventListener("click", async () => {
+      const name = (document.getElementById("regName")?.value || "").trim();
+      const rawPhone = (document.getElementById("regPhone")?.value || "").trim();
+
+      if (!name) {
+        this.showToast("Please enter your Full Name to create your account.");
+        document.getElementById("regName")?.focus();
+        return;
+      }
+      if (!rawPhone) {
+        this.showToast("Please enter your Phone Number to create your account.");
+        document.getElementById("regPhone")?.focus();
+        return;
+      }
+
       const phone = rawPhone.startsWith("+") ? rawPhone : `+91 ${rawPhone}`;
-      const height = parseFloat(document.getElementById("loginHeight")?.value) || 178;
-      const weight = parseFloat(document.getElementById("loginWeight")?.value) || 69.5;
-      
+      const height = parseFloat(document.getElementById("regHeight")?.value) || 178;
+      const currentWeight = parseFloat(document.getElementById("regCurrentWeight")?.value) || 69.5;
+      const targetWeight = parseFloat(document.getElementById("regTargetWeight")?.value) || 65.0;
+      const targetDurationMonths = parseInt(document.getElementById("regDuration")?.value, 10) || 3;
+      const fitnessGoal = document.getElementById("regGoal")?.value || "Improve Sports Performance";
+
       await appState.updateUserProfile({
         name,
         phone,
         height,
-        currentWeight: weight
+        currentWeight,
+        startingWeight: currentWeight,
+        targetWeight,
+        targetDurationMonths,
+        fitnessGoal
       });
 
+      appState.setLoggedIn(true);
       this.renderAllDynamicComponents();
-      this.showToast(`Signed in: ${name} (${phone})`);
+      this.showToast(`Account created! Welcome to FitSport, ${name}!`);
       this.navigateTo("dashboard");
     });
-    
+
+    // Backward compatibility alias
+    document.getElementById("loginSubmitBtn")?.addEventListener("click", () => {
+      document.getElementById("loginSignInSubmitBtn")?.click();
+    });
+
     document.getElementById("loginToOnboardingBtn")?.addEventListener("click", () => {
       this.navigateTo("onboarding");
     });
     document.getElementById("loginToLandingBtn")?.addEventListener("click", () => {
+      this.navigateTo("landing");
+    });
+    document.getElementById("logoutToLoginBtn")?.addEventListener("click", () => {
+      this.navigateTo("login");
+    });
+    document.getElementById("logoutToLandingBtn")?.addEventListener("click", () => {
       this.navigateTo("landing");
     });
   }
@@ -449,6 +598,21 @@ class FitSportApp {
     };
 
     document.getElementById("onboardingNextBtn")?.addEventListener("click", async () => {
+      if (this.currentOnboardingStep === 1) {
+        const nameVal = (document.getElementById("obName")?.value || "").trim();
+        const phoneVal = (document.getElementById("obPhone")?.value || "").trim();
+        if (!nameVal) {
+          this.showToast("Please enter your Athlete Name to continue.");
+          document.getElementById("obName")?.focus();
+          return;
+        }
+        if (!phoneVal) {
+          this.showToast("Please enter your Phone Number to continue.");
+          document.getElementById("obPhone")?.focus();
+          return;
+        }
+      }
+
       if (this.currentOnboardingStep < totalSteps) {
         this.currentOnboardingStep++;
         this.updateOnboardingStepUI();
@@ -485,6 +649,7 @@ class FitSportApp {
         });
 
         this.renderAllDynamicComponents();
+        appState.setLoggedIn(true);
         this.showToast(`Profile Setup Completed for ${name}!`);
         this.navigateTo("dashboard");
       }
@@ -496,6 +661,14 @@ class FitSportApp {
         this.updateOnboardingStepUI();
       }
     });
+
+    document.getElementById("onboardingToLoginBtn")?.addEventListener("click", () => {
+      this.navigateTo("login");
+    });
+
+    document.getElementById("onboardingToLandingBtn")?.addEventListener("click", () => {
+      this.navigateTo("landing");
+    });
   }
 
   populateOnboardingForm() {
@@ -503,10 +676,10 @@ class FitSportApp {
     if (!user) return;
 
     const obName = document.getElementById("obName");
-    if (obName) obName.value = user.name || "Sahul Hameed";
+    if (obName) obName.value = "";
 
     const obPhone = document.getElementById("obPhone");
-    if (obPhone) obPhone.value = user.phone || "+91 99999 88888";
+    if (obPhone) obPhone.value = "";
 
     const obHeight = document.getElementById("obHeight");
     if (obHeight) obHeight.value = user.height || 178;
@@ -588,6 +761,165 @@ class FitSportApp {
     if (quickTargetInput && document.activeElement !== quickTargetInput) {
       quickTargetInput.value = user.targetWeight;
     }
+
+    // ------------------------------------------------------------------------
+    // Calorie Maintenance Engine (1 kg = 7,700 kcal Rule)
+    // ------------------------------------------------------------------------
+    const metrics = appState.calculateEnergyMetrics();
+    const weightDelta = metrics.weightDiff;
+    const deltaSign = weightDelta > 0 ? `+${weightDelta}` : `${weightDelta}`;
+    const months = user.targetDurationMonths || 3;
+    const days = metrics.totalDays;
+
+    const elWeightDelta = document.getElementById("engineWeightDelta");
+    if (elWeightDelta) elWeightDelta.textContent = `${deltaSign} kg`;
+
+    const elDeltaSub = document.getElementById("engineDeltaSubtext");
+    if (elDeltaSub) elDeltaSub.textContent = `Target: ${user.targetWeight} kg vs Entered: ${user.currentWeight} kg`;
+
+    const elTotalCals = document.getElementById("engineTotalCaloriesNeeded");
+    if (elTotalCals) elTotalCals.textContent = `${metrics.totalCalorieAdjustment.toLocaleString()} kcal`;
+
+    const elTotalFormula = document.getElementById("engineTotalFormula");
+    if (elTotalFormula) elTotalFormula.textContent = `${Math.abs(weightDelta)} kg × 7,700 kcal/kg`;
+
+    const elDailyGoal = document.getElementById("engineDailyCalorieTarget");
+    if (elDailyGoal) elDailyGoal.textContent = `${metrics.dailyCalorieGoal.toLocaleString()} kcal/day`;
+
+    const elMaint = document.getElementById("engineMaintenanceCals");
+    if (elMaint) {
+      if (weightDelta < 0) {
+        elMaint.textContent = `TDEE: ${metrics.maintenanceCalories.toLocaleString()} - ${metrics.dailyAdjustment} kcal/day`;
+      } else if (weightDelta > 0) {
+        elMaint.textContent = `TDEE: ${metrics.maintenanceCalories.toLocaleString()} + ${metrics.dailyAdjustment} kcal/day`;
+      } else {
+        elMaint.textContent = `TDEE Maintenance: ${metrics.maintenanceCalories.toLocaleString()} kcal/day`;
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // Live Dynamic Caloric Balance Tracker (Nutrition In [+] vs Workout Burned [-])
+    // ------------------------------------------------------------------------
+    const nut = appState.getNutritionTotals();
+    const burned = appState.getCaloriesBurnedToday();
+    const foodCalories = nut.calories || 0;
+    const burnedCalories = burned || 0;
+    const netCalories = Math.max(0, foodCalories - burnedCalories);
+    const targetGoal = metrics.dailyCalorieGoal;
+    const remainingBudget = targetGoal - netCalories;
+    const usedPct = targetGoal > 0 ? Math.min(150, Math.round((netCalories / targetGoal) * 100)) : 0;
+
+    // 4th KPI Pillar: Live Net Calories Today
+    const elNetCalories = document.getElementById("engineNetCalories");
+    if (elNetCalories) elNetCalories.textContent = `${netCalories.toLocaleString()} kcal`;
+
+    const elNetSub = document.getElementById("engineNetSubtext");
+    if (elNetSub) {
+      elNetSub.textContent = `+${foodCalories.toLocaleString()} in − ${burnedCalories.toLocaleString()} burn`;
+    }
+
+    // Live Balance Tracker Components in the same place
+    const elLiveNutritionIn = document.getElementById("engineLiveNutritionIn");
+    if (elLiveNutritionIn) elLiveNutritionIn.textContent = `+${foodCalories.toLocaleString()} kcal`;
+
+    const elLiveMealsCount = document.getElementById("engineLiveMealsCount");
+    if (elLiveMealsCount) {
+      const mealKeys = Object.keys(appState.state.meals || {});
+      const totalItems = mealKeys.reduce((acc, key) => acc + (appState.state.meals[key]?.length || 0), 0);
+      elLiveMealsCount.textContent = `${totalItems} food items logged`;
+    }
+
+    const fNet = document.getElementById("fitnessNetCaloriesDisplay");
+    if (fNet) fNet.textContent = `${netCalories.toLocaleString()} kcal`;
+
+    const elLiveWorkoutMinus = document.getElementById("engineLiveWorkoutMinus");
+    if (elLiveWorkoutMinus) {
+      elLiveWorkoutMinus.textContent = burnedCalories > 0 ? `-${burnedCalories.toLocaleString()} kcal` : `0 kcal`;
+    }
+
+    const elLiveBurnDetail = document.getElementById("engineLiveBurnDetail");
+    if (elLiveBurnDetail) {
+      elLiveBurnDetail.textContent = burnedCalories > 0 ? `Workouts + Sports burned` : `0 kcal (Adds after workout)`;
+    }
+
+    const elLiveNetTotal = document.getElementById("engineLiveNetTotal");
+    if (elLiveNetTotal) elLiveNetTotal.textContent = `${netCalories.toLocaleString()} kcal`;
+
+    const elLiveRemaining = document.getElementById("engineLiveRemaining");
+    if (elLiveRemaining) {
+      if (remainingBudget >= 0) {
+        elLiveRemaining.textContent = `${remainingBudget.toLocaleString()} kcal`;
+        elLiveRemaining.style.color = "#fbbf24";
+      } else {
+        elLiveRemaining.textContent = `+${Math.abs(remainingBudget).toLocaleString()} kcal`;
+        elLiveRemaining.style.color = "#f87171";
+      }
+    }
+
+    const elLiveGoalRef = document.getElementById("engineLiveGoalRef");
+    if (elLiveGoalRef) {
+      elLiveGoalRef.textContent = remainingBudget >= 0
+        ? `Budget remaining of ${targetGoal.toLocaleString()} kcal`
+        : `Exceeded target by ${Math.abs(remainingBudget).toLocaleString()} kcal`;
+    }
+
+    const elLiveProgressPct = document.getElementById("engineLiveProgressPct");
+    if (elLiveProgressPct) elLiveProgressPct.textContent = `${usedPct}% of goal used`;
+
+    const elLiveProgressBar = document.getElementById("engineLiveProgressBar");
+    if (elLiveProgressBar) {
+      elLiveProgressBar.style.width = `${Math.min(100, usedPct)}%`;
+      if (usedPct > 100) {
+        elLiveProgressBar.style.background = "linear-gradient(90deg, #f59e0b 0%, #ef4444 100%)";
+      } else {
+        elLiveProgressBar.style.background = "linear-gradient(90deg, #10b981 0%, #3b82f6 100%)";
+      }
+    }
+
+    const elLiveTrackMid = document.getElementById("engineLiveTrackMid");
+    if (elLiveTrackMid) elLiveTrackMid.textContent = `Halfway (${Math.round(targetGoal / 2).toLocaleString()} kcal)`;
+
+    const elLiveTrackMax = document.getElementById("engineLiveTrackMax");
+    if (elLiveTrackMax) elLiveTrackMax.textContent = `${targetGoal.toLocaleString()} kcal Goal`;
+
+    const elLiveStatusBadge = document.getElementById("engineLiveStatusBadge");
+    if (elLiveStatusBadge) {
+      if (remainingBudget >= 0) {
+        elLiveStatusBadge.textContent = "ON TARGET";
+        elLiveStatusBadge.style.color = "var(--green-primary)";
+        elLiveStatusBadge.style.background = "rgba(34,197,94,0.15)";
+        elLiveStatusBadge.style.borderColor = "rgba(34,197,94,0.3)";
+      } else {
+        elLiveStatusBadge.textContent = "OVER TARGET";
+        elLiveStatusBadge.style.color = "#f87171";
+        elLiveStatusBadge.style.background = "rgba(239,68,68,0.15)";
+        elLiveStatusBadge.style.borderColor = "rgba(239,68,68,0.3)";
+      }
+    }
+
+    const spanWeight = document.getElementById("calcWeightSpan");
+    if (spanWeight) spanWeight.textContent = `${Math.abs(weightDelta)} kg`;
+
+    const spanTotalKcal = document.getElementById("calcTotalKcalSpan");
+    if (spanTotalKcal) spanTotalKcal.textContent = `${metrics.totalCalorieAdjustment.toLocaleString()} kcal`;
+
+    const spanDays = document.getElementById("calcDaysSpan");
+    if (spanDays) spanDays.textContent = `${days} days (${months} Months)`;
+
+    const spanDailyDef = document.getElementById("calcDailyDeficitSpan");
+    if (spanDailyDef) {
+      spanDailyDef.textContent = weightDelta < 0
+        ? `-${metrics.dailyAdjustment} kcal/day deficit`
+        : weightDelta > 0
+          ? `+${metrics.dailyAdjustment} kcal/day surplus`
+          : `0 kcal/day adjustment`;
+    }
+
+    const spanTdee = document.getElementById("calcTdeeSpan");
+    if (spanTdee) spanTdee.textContent = `${metrics.maintenanceCalories.toLocaleString()} kcal`;
+
+    const spanGoal = document.getElementById("calcGoalSpan");
+    if (spanGoal) spanGoal.textContent = `${metrics.dailyCalorieGoal.toLocaleString()} kcal/day`;
   }
 
   bindWeightControls() {
@@ -1101,9 +1433,11 @@ class FitSportApp {
   renderWorkoutsCategories() {
     const homeMount = document.getElementById("homeWorkoutsGrid");
     const equipMount = document.getElementById("equipmentWorkoutsGrid");
+    const circuitsMount = document.getElementById("circuitsWorkoutsGrid");
     if (!homeMount || !equipMount) return;
 
-    const homeList = WORKOUT_CATEGORIES.filter(w => w.category === "Home Workouts");
+    const circuitsList = WORKOUT_CATEGORIES.filter(w => w.subCategory === "30-Min Circuit");
+    const homeList = WORKOUT_CATEGORIES.filter(w => w.category === "Home Workouts" && w.subCategory !== "30-Min Circuit");
     const equipList = WORKOUT_CATEGORIES.filter(w => w.category === "Equipment Workouts");
 
     const renderCard = (w) => `
@@ -1121,14 +1455,56 @@ class FitSportApp {
             <span class="meta-chip">⏱️ ${w.duration} min</span>
             <span class="meta-chip">⚡ ${w.intensity}</span>
             <span class="meta-chip">📋 ${w.exercisesCount} Exercises</span>
+            ${w.equipmentNeeded ? `<span class="meta-chip">🏋️ ${w.equipmentNeeded}</span>` : ''}
           </div>
           <button type="button" class="btn btn-secondary btn-sm" style="width: 100%;">View Routine & Start →</button>
         </div>
       </div>
     `;
 
+    if (circuitsMount) {
+      circuitsMount.innerHTML = circuitsList.map(renderCard).join('');
+    }
     homeMount.innerHTML = homeList.map(renderCard).join('');
     equipMount.innerHTML = equipList.map(renderCard).join('');
+
+    // Setup filter tabs once
+    if (!this._workoutFilterBound) {
+      this._workoutFilterBound = true;
+      document.querySelectorAll(".workout-filter-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".workout-filter-btn").forEach(b => {
+            b.classList.remove("btn-primary", "active");
+            b.classList.add("btn-secondary");
+          });
+          btn.classList.remove("btn-secondary");
+          btn.classList.add("btn-primary", "active");
+
+          const filter = btn.getAttribute("data-filter");
+          const cSec = document.getElementById("circuitsSectionWrapper");
+          const hSec = document.getElementById("homeSectionWrapper");
+          const eSec = document.getElementById("equipmentSectionWrapper");
+
+          if (filter === "all") {
+            if (cSec) cSec.style.display = "block";
+            if (hSec) hSec.style.display = "block";
+            if (eSec) eSec.style.display = "block";
+          } else if (filter === "circuits") {
+            if (cSec) cSec.style.display = "block";
+            if (hSec) hSec.style.display = "none";
+            if (eSec) eSec.style.display = "none";
+          } else if (filter === "no-equipment") {
+            if (cSec) cSec.style.display = "none";
+            if (hSec) hSec.style.display = "block";
+            if (eSec) eSec.style.display = "none";
+          } else if (filter === "equipment") {
+            if (cSec) cSec.style.display = "none";
+            if (hSec) hSec.style.display = "none";
+            if (eSec) eSec.style.display = "block";
+          }
+        });
+      });
+    }
 
     document.querySelectorAll(".workout-card").forEach(card => {
       card.addEventListener("click", () => {
@@ -1148,18 +1524,33 @@ class FitSportApp {
     document.getElementById("wDetailCalories").textContent = `${workout.calories} kcal`;
     document.getElementById("wDetailDuration").textContent = `${workout.duration} min duration`;
 
+    const variationsBox = document.getElementById("wDetailVariationsBox");
+    const variationsText = document.getElementById("wDetailVariationsText");
+    if (variationsBox && variationsText) {
+      if (workout.variations) {
+        variationsText.textContent = workout.variations;
+        variationsBox.style.display = "block";
+      } else {
+        variationsBox.style.display = "none";
+      }
+    }
+
     const exerciseListMount = document.getElementById("wDetailExerciseList");
     if (exerciseListMount) {
       exerciseListMount.innerHTML = workout.exercises.map((ex, idx) => `
-        <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface); padding: 14px 18px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
-          <div>
-            <div class="font-bold text-light">${idx + 1}. ${ex.name}</div>
-            <div style="font-size: 0.8rem; color: var(--text-secondary);">${ex.target}</div>
+        <div style="background: var(--bg-surface); padding: 14px 18px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+            <div>
+              <div class="font-bold text-light" style="font-size: 1rem;">${idx + 1}. ${ex.name}</div>
+              <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">🎯 ${ex.target}</div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-weight: 700; color: var(--green-primary); font-size: 1rem;">${ex.sets} × ${ex.reps}</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary);">Rest: ${ex.restSec}s</div>
+            </div>
           </div>
-          <div style="text-align: right;">
-            <div style="font-weight: 700; color: var(--green-primary); font-size: 1rem;">${ex.sets} × ${ex.reps}</div>
-            <div style="font-size: 0.75rem; color: var(--text-secondary);">Rest: ${ex.restSec}s</div>
-          </div>
+          ${ex.howTo ? `<div style="font-size: 0.83rem; color: #a3a3a3; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06);"><strong style="color: var(--text-primary);">How To:</strong> ${ex.howTo}</div>` : ''}
+          ${ex.caloriesPer30Min ? `<div style="font-size: 0.78rem; color: #34d399; margin-top: 6px; font-weight: 600;">⚡ Est. Burn: ${ex.caloriesPer30Min} (per 30 min)</div>` : ''}
         </div>
       `).join('');
     }
@@ -1511,6 +1902,77 @@ class FitSportApp {
   }
 
   renderHistoryFeed(filter = "all") {
+    const user = appState.state.user || {};
+    const nut = appState.getNutritionTotals();
+    const burned = appState.getCaloriesBurnedToday();
+    const netCalories = Math.max(0, nut.calories - burned);
+    const targetCalories = user.calorieGoal || 2063;
+    const completionPct = Math.min(100, Math.round((nut.calories / targetCalories) * 100));
+    const remainingCalories = Math.max(0, targetCalories - nut.calories);
+
+    // 1. Update History Caloric Performance Banner
+    const elTarget = document.getElementById("histValTargetCalories");
+    if (elTarget) {
+      elTarget.innerHTML = `${targetCalories.toLocaleString()} <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">kcal</span>`;
+    }
+
+    const elCompleted = document.getElementById("histValCompletedCalories");
+    if (elCompleted) {
+      elCompleted.innerHTML = `${nut.calories.toLocaleString()} <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">kcal</span>`;
+    }
+
+    const elBurned = document.getElementById("histValBurnedCalories");
+    if (elBurned) {
+      elBurned.innerHTML = `${burned.toLocaleString()} <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">kcal</span>`;
+    }
+
+    const elNet = document.getElementById("histValNetCalories");
+    if (elNet) {
+      elNet.innerHTML = `${netCalories.toLocaleString()} <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">kcal</span>`;
+    }
+
+    const elNetSub = document.getElementById("histNetCaloriesSubtext");
+    if (elNetSub) {
+      elNetSub.textContent = `${nut.calories.toLocaleString()} in − ${burned.toLocaleString()} burn`;
+    }
+
+    const elProgLabel = document.getElementById("histCalorieProgressLabel");
+    if (elProgLabel) {
+      elProgLabel.textContent = `${nut.calories.toLocaleString()} / ${targetCalories.toLocaleString()} kcal (${completionPct}%)`;
+    }
+
+    const elProgBar = document.getElementById("histCalorieProgressBar");
+    if (elProgBar) {
+      elProgBar.style.width = `${completionPct}%`;
+    }
+
+    const elStatusBadge = document.getElementById("historyCalorieStatusBadge");
+    if (elStatusBadge) {
+      if (nut.calories === 0) {
+        elStatusBadge.textContent = "● 0% Completed (Fresh Day)";
+        elStatusBadge.style.color = "var(--text-secondary)";
+        elStatusBadge.style.borderColor = "var(--border-subtle)";
+      } else if (nut.calories >= targetCalories) {
+        elStatusBadge.textContent = `✓ 100% Target Met (${nut.calories.toLocaleString()} kcal)`;
+        elStatusBadge.style.color = "var(--green-primary)";
+        elStatusBadge.style.borderColor = "var(--green-primary)";
+      } else {
+        elStatusBadge.textContent = `● ${completionPct}% Completed (${remainingCalories.toLocaleString()} kcal left)`;
+        elStatusBadge.style.color = "var(--green-primary)";
+        elStatusBadge.style.borderColor = "var(--green-primary)";
+      }
+    }
+
+    const elRemain = document.getElementById("histCalorieRemainingText");
+    if (elRemain) {
+      elRemain.textContent = remainingCalories > 0 ? `Remaining to target: ${remainingCalories.toLocaleString()} kcal` : `Target achieved! Surplus: ${(nut.calories - targetCalories).toLocaleString()} kcal`;
+    }
+
+    const elBurnTarget = document.getElementById("histCalorieBurnTrajectoryText");
+    if (elBurnTarget) {
+      elBurnTarget.textContent = `Daily burn target: ${(user.dailyBurnTarget || 635).toLocaleString()} kcal`;
+    }
+
     const container = document.getElementById("historyTimelineFeed");
     if (!container) return;
 
@@ -1529,37 +1991,250 @@ class FitSportApp {
       return;
     }
 
-    container.innerHTML = items.map(item => `
-      <div class="timeline-item">
-        <div class="timeline-left">
-          <div class="timeline-icon-box">
-            <svg><use href="#icon-${item.icon || 'activity'}"></use></svg>
+    container.innerHTML = items.map(item => {
+      let calorieTagHtml = "";
+      if (item.type === "meals") {
+        calorieTagHtml = `<div style="margin-top: 4px;"><span style="font-size: 0.72rem; padding: 2px 7px; border-radius: 4px; background: rgba(31, 182, 34, 0.12); color: var(--green-primary); font-weight: 600;">Completed: +${item.metric}</span></div>`;
+      } else if (item.type === "workouts" || item.type === "sports") {
+        calorieTagHtml = `<div style="margin-top: 4px;"><span style="font-size: 0.72rem; padding: 2px 7px; border-radius: 4px; background: rgba(255, 153, 68, 0.12); color: #ff9944; font-weight: 600;">Burn: −${item.metric}</span></div>`;
+      }
+
+      return `
+        <div class="timeline-item">
+          <div class="timeline-left">
+            <div class="timeline-icon-box">
+              <svg><use href="#icon-${item.icon || 'activity'}"></use></svg>
+            </div>
+            <div>
+              <div class="timeline-title">${item.title}</div>
+              <div class="timeline-sub">${item.subtitle} • ${item.subMetric}</div>
+              ${calorieTagHtml}
+            </div>
           </div>
-          <div>
-            <div class="timeline-title">${item.title}</div>
-            <div class="timeline-sub">${item.subtitle} • ${item.subMetric}</div>
+          <div class="timeline-right">
+            <div class="timeline-metric">${item.metric}</div>
+            <div class="timeline-time">${item.date} • ${item.time}</div>
           </div>
         </div>
-        <div class="timeline-right">
-          <div class="timeline-metric">${item.metric}</div>
-          <div class="timeline-time">${item.date} • ${item.time}</div>
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   // --------------------------------------------------------------------------
   // 21. Analytics & Charts
   // --------------------------------------------------------------------------
   renderAnalyticsCharts() {
-    const weeklyMount = document.getElementById("analyticsWeeklyChartMount");
-    if (weeklyMount) {
-      renderWeeklyCaloriesChart(weeklyMount);
+    const user = appState.state.user || {};
+    const nut = appState.getNutritionTotals();
+    const burned = appState.getCaloriesBurnedToday();
+    const netCalories = Math.max(0, nut.calories - burned);
+    const schedule = appState.getAutoResetSchedule();
+
+    const workoutsToday = appState.state.history.filter(h => h.date === "Today" && h.type === "workouts").length;
+    const sportsToday = appState.state.history.filter(h => h.date === "Today" && h.type === "sports").length;
+    const totalTodaySessions = workoutsToday + sportsToday;
+
+    // 1. Update Live Daily Analytics Stat Cards
+    const elCons = document.getElementById("analyticsTodayConsumed");
+    if (elCons) elCons.innerHTML = `${nut.calories.toLocaleString()} <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);">kcal</span>`;
+
+    const elBurn = document.getElementById("analyticsTodayBurned");
+    if (elBurn) elBurn.innerHTML = `${burned.toLocaleString()} <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);">kcal</span>`;
+
+    const elNet = document.getElementById("analyticsTodayNet");
+    if (elNet) elNet.innerHTML = `${netCalories.toLocaleString()} <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);">kcal</span>`;
+
+    const elNetSub = document.getElementById("analyticsNetSubtext");
+    if (elNetSub) elNetSub.textContent = `${nut.calories.toLocaleString()} in − ${burned.toLocaleString()} burn`;
+
+    const elWk = document.getElementById("analyticsTodayWorkouts");
+    if (elWk) elWk.innerHTML = `${totalTodaySessions} <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);">completed</span>`;
+
+    const elWkSub = document.getElementById("analyticsWorkoutsSubtext");
+    if (elWkSub) elWkSub.textContent = `${workoutsToday} workouts • ${sportsToday} sports`;
+
+    const elSchedBadge = document.getElementById("analyticsAutoResetScheduleBadge");
+    if (elSchedBadge) {
+      elSchedBadge.textContent = schedule.enabled ? `⏱ Auto-Reset: ${schedule.time12 || schedule.time}` : `⏱ Reset: OFF`;
+      elSchedBadge.style.cursor = "pointer";
+      if (!elSchedBadge.dataset.bound) {
+        elSchedBadge.dataset.bound = "true";
+        elSchedBadge.addEventListener("click", () => this.openAutoResetModal());
+      }
     }
 
+    const elInstantReset = document.getElementById("analyticsInstantResetBtn");
+    if (elInstantReset && !elInstantReset.dataset.bound) {
+      elInstantReset.dataset.bound = "true";
+      elInstantReset.addEventListener("click", () => {
+        appState.resetDailyTrackers();
+        this.renderMealTracker();
+        this.renderWaterScreen();
+        this.renderAllDynamicComponents();
+        this.showToast("🔄 Analytics & daily activity reset to 0!");
+      });
+    }
+
+    // 2. Dynamic Most Played Sports Analytics (starts down at 0, increases as sports are logged)
+    const sportsTodayEntries = appState.state.history.filter(h => h.date === "Today" && h.type === "sports");
+    let totalSportsMins = 0;
+    let totalSportsCals = 0;
+    const sportMinutesMap = {
+      "Cycling": 0,
+      "Football": 0,
+      "Badminton": 0,
+      "Running": 0
+    };
+
+    sportsTodayEntries.forEach(entry => {
+      // parse metric (e.g. "520 kcal burned")
+      const calsMatch = entry.metric?.match(/(\d+)\s*kcal/);
+      if (calsMatch) totalSportsCals += parseInt(calsMatch[1], 10);
+
+      // parse subMetric (e.g. "Duration: 45 min")
+      const durMatch = entry.subMetric?.match(/Duration:\s*(\d+)\s*min/);
+      const mins = durMatch ? parseInt(durMatch[1], 10) : 30;
+      totalSportsMins += mins;
+
+      const titleLower = (entry.title || "").toLowerCase();
+      if (titleLower.includes("cycling")) sportMinutesMap["Cycling"] += mins;
+      else if (titleLower.includes("football")) sportMinutesMap["Football"] += mins;
+      else if (titleLower.includes("badminton")) sportMinutesMap["Badminton"] += mins;
+      else if (titleLower.includes("running") || titleLower.includes("run")) sportMinutesMap["Running"] += mins;
+      else {
+        // dynamic sport
+        const sName = entry.title.replace(/^Sport:\s*/i, '').trim();
+        sportMinutesMap[sName] = (sportMinutesMap[sName] || 0) + mins;
+      }
+    });
+
+    const elSportsTime = document.getElementById("analyticsTotalSportsTime");
+    if (elSportsTime) {
+      elSportsTime.textContent = `${(totalSportsMins / 60).toFixed(1)} hrs`;
+    }
+    const elSportsCals = document.getElementById("analyticsTotalSportsCalories");
+    if (elSportsCals) {
+      elSportsCals.textContent = `${totalSportsCals.toLocaleString()} kcal`;
+    }
+    const elActiveDay = document.getElementById("analyticsMostActiveDay");
+    if (elActiveDay) {
+      elActiveDay.textContent = totalSportsMins > 0 ? "Today" : "Awaiting Activity";
+    }
+
+    const elPrimarySportTitle = document.getElementById("analyticsPrimarySportTitle");
+    const sportsKeys = Object.keys(sportMinutesMap);
+    let topSport = null;
+    let maxMins = 0;
+    sportsKeys.forEach(k => {
+      if (sportMinutesMap[k] > maxMins) {
+        maxMins = sportMinutesMap[k];
+        topSport = k;
+      }
+    });
+
+    if (elPrimarySportTitle) {
+      if (totalSportsMins === 0) {
+        elPrimarySportTitle.textContent = "Clean Slate (0 min)";
+        elPrimarySportTitle.style.color = "var(--text-secondary)";
+      } else {
+        const topPct = Math.round((maxMins / totalSportsMins) * 100);
+        elPrimarySportTitle.textContent = `${topSport} Dominance (${topPct}%)`;
+        elPrimarySportTitle.style.color = "var(--green-primary)";
+      }
+    }
+
+    const elSportsBarsList = document.getElementById("analyticsSportsBarsList");
+    if (elSportsBarsList) {
+      const displaySports = ["Cycling", "Football", "Badminton", "Running"];
+      // ensure all tracked sports are shown
+      sportsKeys.forEach(k => {
+        if (!displaySports.includes(k) && sportMinutesMap[k] > 0) displaySports.push(k);
+      });
+
+      elSportsBarsList.innerHTML = displaySports.map((sportName, idx) => {
+        const mins = sportMinutesMap[sportName] || 0;
+        const pct = totalSportsMins > 0 ? Math.round((mins / totalSportsMins) * 100) : 0;
+        const hours = (mins / 60).toFixed(1);
+        const isHighlight = sportName === topSport && totalSportsMins > 0;
+        const fillBg = idx === 0 ? "var(--green-primary)" : (idx === 1 ? "var(--green-soft)" : (idx === 2 ? "#2f442f" : "#252e25"));
+
+        return `
+          <div class="sport-bar-row">
+            <div class="sport-bar-meta ${isHighlight ? 'highlight' : ''}">
+              <span style="${isHighlight ? 'color: var(--green-primary); font-weight: 700;' : ''}">${sportName}</span>
+              <span style="${isHighlight ? 'color: var(--green-primary); font-weight: 700;' : 'color: var(--text-secondary);'}">
+                ${pct}% • ${mins > 0 ? `${hours} hrs (${mins}m)` : '0 mins'}
+              </span>
+            </div>
+            <div class="sport-bar-track">
+              <div class="sport-bar-fill ${isHighlight ? 'active' : ''}" style="width: ${pct}%; background: ${fillBg}; transition: width 0.4s ease;"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 3. Dynamic Weekly Workout Frequency (starts down at 0, increases with completed sessions)
+    const elFreqBars = document.getElementById("analyticsWeeklyWorkoutFrequencyBars");
+    const elFreqSub = document.getElementById("analyticsWorkoutConsistencySub");
+    const elFreqBadge = document.getElementById("analyticsWorkoutTargetBadge");
+    const elFreqStrain = document.getElementById("analyticsWorkoutPeakStrain");
+
+    const daysWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const todayIndex = new Date().getDay();
+    const todayDayName = daysWeek[todayIndex];
+
+    const targetWeeklySessions = 6;
+    const consistencyPct = Math.min(100, Math.round((totalTodaySessions / targetWeeklySessions) * 100));
+
+    if (elFreqSub) {
+      elFreqSub.textContent = `Consistency: ${totalTodaySessions} of ${targetWeeklySessions} target sessions`;
+    }
+    if (elFreqBadge) {
+      elFreqBadge.textContent = `${consistencyPct}% TARGET`;
+      elFreqBadge.style.color = totalTodaySessions > 0 ? "var(--green-primary)" : "var(--text-secondary)";
+      elFreqBadge.style.borderColor = totalTodaySessions > 0 ? "var(--green-primary)" : "var(--border-color)";
+    }
+    if (elFreqStrain) {
+      elFreqStrain.textContent = totalTodaySessions > 0 
+        ? `Today (${todayDayName}): ${totalTodaySessions} session${totalTodaySessions > 1 ? 's' : ''} completed` 
+        : `Today (${todayDayName}): 0 sessions completed (Down at 0)`;
+      elFreqStrain.style.color = totalTodaySessions > 0 ? "var(--green-primary)" : "var(--text-secondary)";
+    }
+
+    if (elFreqBars) {
+      const weekdaysList = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      elFreqBars.innerHTML = weekdaysList.map(dayName => {
+        const isToday = dayName === todayDayName;
+        const count = isToday ? totalTodaySessions : 0;
+        const barHeight = count > 0 ? Math.min(140, Math.max(25, count * 45)) : 0;
+        const isDown = count === 0;
+
+        return `
+          <div class="chart-col" style="text-align: center; flex: 1; position: relative;">
+            <div style="height: 120px; display: flex; align-items: flex-end; justify-content: center; position: relative;">
+              ${isDown ? `
+                <div style="position: absolute; bottom: 0; width: 65%; height: 3px; background: rgba(255, 255, 255, 0.08); border-radius: 2px;" title="${dayName}: 0 sessions (Down at 0)"></div>
+              ` : ''}
+              <div class="bar bar-burned" style="height: ${barHeight}px; width: 14px; transition: height 0.4s ease; ${barHeight === 0 ? 'opacity: 0;' : ''} ${isToday ? 'background: var(--green-primary); box-shadow: 0 0 12px rgba(31, 182, 34, 0.6);' : 'background: #252e25;'}" title="${dayName}: ${count} completed session(s)"></div>
+            </div>
+            <span class="col-label" style="display: block; margin-top: 8px; font-size: 0.78rem; ${isToday ? 'color: var(--green-primary); font-weight: 800;' : 'color: var(--text-secondary);'}">
+              ${dayName}${isToday ? ' (Today)' : ''}
+            </span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 4. Weekly Energy Balance Dynamic Chart (today's consumed & burned live)
+    const weeklyMount = document.getElementById("analyticsWeeklyChartMount");
+    if (weeklyMount) {
+      renderWeeklyCaloriesChart(weeklyMount, nut.calories, burned, user.calorieGoal || 2063);
+    }
+
+    // 5. Weight Journey Chart
     const weightMount = document.getElementById("analyticsWeightJourneyMount");
     if (weightMount) {
-      const user = appState.state.user;
       renderWeightJourneyChart(weightMount, appState.state.weightHistory, user.currentWeight, user.targetWeight, user.targetDurationMonths || 3);
     }
   }
@@ -2284,9 +2959,177 @@ class FitSportApp {
     });
 
     document.getElementById("logoutBtn")?.addEventListener("click", () => {
-      this.showToast("Logged out successfully.");
-      this.navigateTo("login");
+      this.navigateTo("logout");
     });
+  }
+
+  // --------------------------------------------------------------------------
+  // Daily Auto-Reset Controller & Clock Scheduler
+  // --------------------------------------------------------------------------
+  openAutoResetModal() {
+    const modal = document.getElementById("autoResetModal");
+    if (!modal) return;
+    const schedule = appState.getAutoResetSchedule();
+
+    const enabledToggle = document.getElementById("autoResetEnabledToggle");
+    if (enabledToggle) enabledToggle.checked = !!schedule.enabled;
+
+    const timeInput = document.getElementById("autoResetTimeInput");
+    if (timeInput) timeInput.value = schedule.time || "00:00";
+
+    const label = document.getElementById("autoResetTimeDisplayLabel");
+    if (label) label.textContent = schedule.time12 || "12:00 AM";
+
+    const subtext = document.getElementById("autoResetStatusSubtext");
+    if (subtext) {
+      subtext.textContent = schedule.enabled 
+        ? `Active: resets everyday at ${schedule.time12 || schedule.time}` 
+        : `Auto-reset is currently disabled`;
+    }
+
+    const nextDue = document.getElementById("autoResetNextDue");
+    if (nextDue) {
+      nextDue.textContent = schedule.enabled ? `Everyday at ${schedule.time12 || schedule.time}` : "Disabled";
+    }
+
+    modal.style.display = "flex";
+  }
+
+  closeAutoResetModal() {
+    const modal = document.getElementById("autoResetModal");
+    if (modal) modal.style.display = "none";
+  }
+
+  updateAutoResetModalLabel(timeStr) {
+    if (!timeStr) return;
+    const parts = timeStr.split(":");
+    let hh = parseInt(parts[0], 10) || 0;
+    const mm = parts[1] || "00";
+    const ampm = hh >= 12 ? "PM" : "AM";
+    const hh12 = hh % 12 === 0 ? 12 : hh % 12;
+    const time12 = `${String(hh12).padStart(2, '0')}:${mm} ${ampm}`;
+
+    const label = document.getElementById("autoResetTimeDisplayLabel");
+    if (label) label.textContent = time12;
+
+    const subtext = document.getElementById("autoResetStatusSubtext");
+    const enabled = document.getElementById("autoResetEnabledToggle")?.checked;
+    if (subtext && enabled) {
+      subtext.textContent = `Active: resets everyday at ${time12}`;
+    }
+  }
+
+  updateHeaderAutoResetBadge() {
+    const badge = document.getElementById("headerAutoResetBadge");
+    if (!badge) return;
+    const sched = appState.getAutoResetSchedule();
+    if (sched && sched.enabled) {
+      badge.textContent = `Reset: ${sched.time12 || sched.time}`;
+      badge.style.color = "var(--green-primary)";
+    } else {
+      badge.textContent = "Reset: OFF";
+      badge.style.color = "var(--text-secondary)";
+    }
+  }
+
+  bindAutoResetModal() {
+    // Open from header button
+    document.getElementById("headerAutoResetBtn")?.addEventListener("click", () => {
+      this.openAutoResetModal();
+    });
+
+    // Close button
+    document.getElementById("closeAutoResetModalBtn")?.addEventListener("click", () => {
+      this.closeAutoResetModal();
+    });
+
+    // Click outside to close
+    document.getElementById("autoResetModal")?.addEventListener("click", (e) => {
+      if (e.target.id === "autoResetModal") {
+        this.closeAutoResetModal();
+      }
+    });
+
+    // Presets
+    document.querySelectorAll(".auto-reset-preset").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const timeVal = btn.getAttribute("data-time");
+        const input = document.getElementById("autoResetTimeInput");
+        if (input && timeVal) {
+          input.value = timeVal;
+          this.updateAutoResetModalLabel(timeVal);
+        }
+      });
+    });
+
+    // Time input change
+    const timeInput = document.getElementById("autoResetTimeInput");
+    timeInput?.addEventListener("input", (e) => {
+      this.updateAutoResetModalLabel(e.target.value);
+    });
+
+    // Toggle switch change
+    document.getElementById("autoResetEnabledToggle")?.addEventListener("change", (e) => {
+      const isChecked = e.target.checked;
+      const subtext = document.getElementById("autoResetStatusSubtext");
+      const sched = appState.getAutoResetSchedule();
+      if (subtext) {
+        subtext.textContent = isChecked 
+          ? `Active: resets everyday at ${sched.time12 || sched.time}` 
+          : `Auto-reset is currently disabled`;
+      }
+    });
+
+    // Save button
+    document.getElementById("saveAutoResetScheduleBtn")?.addEventListener("click", () => {
+      const enabled = document.getElementById("autoResetEnabledToggle")?.checked;
+      const time = document.getElementById("autoResetTimeInput")?.value || "00:00";
+      const updated = appState.updateAutoResetSchedule({ enabled, time });
+
+      this.closeAutoResetModal();
+      this.updateHeaderAutoResetBadge();
+      this.showToast(updated.enabled 
+        ? `✅ Auto-Reset Active: Data resets automatically everyday at ${updated.time12}!` 
+        : `⚠️ Daily Auto-Reset disabled.`);
+    });
+
+    // Instant reset button
+    document.getElementById("instantResetAllTodayBtn")?.addEventListener("click", () => {
+      appState.resetDailyTrackers();
+      this.closeAutoResetModal();
+      this.renderMealTracker();
+      this.renderWaterScreen();
+      this.renderAllDynamicComponents();
+      this.showToast("🔄 All today's activity (Workouts, Nutrition & Water) reset to 0.");
+    });
+  }
+
+  startAutoResetWatcher() {
+    // Check every 15 seconds against scheduled time
+    setInterval(() => {
+      const schedule = appState.getAutoResetSchedule();
+      if (!schedule || !schedule.enabled || !schedule.time) return;
+
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const mins = String(now.getMinutes()).padStart(2, '0');
+      const currentTimeStr = `${hours}:${mins}`;
+      const todayDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+      if (currentTimeStr === schedule.time && schedule.lastResetDate !== todayDateStr) {
+        console.log(`[AutoReset] Scheduled auto-reset executing at ${currentTimeStr} (${schedule.time12})...`);
+        appState.updateAutoResetSchedule({
+          enabled: schedule.enabled,
+          time: schedule.time,
+          lastResetDate: todayDateStr
+        });
+        appState.resetDailyTrackers();
+        this.renderMealTracker();
+        this.renderWaterScreen();
+        this.renderAllDynamicComponents();
+        this.showToast(`⏰ Daily auto-reset triggered at ${schedule.time12 || schedule.time}! Workouts, nutrition & water reset to 0.`);
+      }
+    }, 15000);
   }
 
   // --------------------------------------------------------------------------
@@ -2369,11 +3212,53 @@ class FitSportApp {
     const dCals = document.getElementById("dashValCaloriesConsumed");
     if (dCals) dCals.textContent = nut.calories.toLocaleString();
 
+    const dCalGoal = document.getElementById("dashCalorieGoalText");
+    if (dCalGoal) dCalGoal.textContent = `of ${user.calorieGoal.toLocaleString()} kcal goal (1kg = 7,700 kcal)`;
+
     const dBurned = document.getElementById("dashValCaloriesBurned");
     if (dBurned) dBurned.textContent = burned.toLocaleString();
 
+    const dBurnedSub = document.getElementById("dashBurnedSubtext");
+    if (dBurnedSub) dBurnedSub.textContent = burned > 0 ? `${burned.toLocaleString()} kcal burned today` : `0 kcal (Starts after workout)`;
+
+    // Live Net Calories on Dashboard
+    const netCalories = Math.max(0, nut.calories - burned);
+    const dNet = document.getElementById("dashValNetCalories");
+    if (dNet) dNet.textContent = netCalories.toLocaleString();
+
+    const dNetSub = document.getElementById("dashNetCaloriesSubtext");
+    if (dNetSub) dNetSub.textContent = `${nut.calories.toLocaleString()} in − ${burned.toLocaleString()} burn`;
+
+    const dTargetCals = document.getElementById("dashValTargetCalories");
+    if (dTargetCals) dTargetCals.textContent = user.calorieGoal.toLocaleString();
+
+    // Hero cards workout & sports pills
+    const workoutsTodayCount = appState.state.history.filter(h => h.date === "Today" && h.type === "workouts").length;
+    const elWkPill = document.getElementById("dashHeroWorkoutPill");
+    if (elWkPill) elWkPill.textContent = `🏋️ ${workoutsTodayCount} Workout${workoutsTodayCount === 1 ? '' : 's'} completed`;
+
+    let sportsCalsToday = 0;
+    appState.state.history.forEach(h => {
+      if (h.date === "Today" && h.type === "sports") {
+        const m = h.metric.match(/(\d+)\s*kcal/);
+        if (m) sportsCalsToday += parseInt(m[1], 10);
+      }
+    });
+    const elSpPill = document.getElementById("dashHeroSportsPill");
+    if (elSpPill) elSpPill.textContent = `⚡ ${sportsCalsToday} kcal burned`;
+
+    const setWeightDisplay = user.targetWeight || user.currentWeight || 65;
+    const nutWeightSpan = document.getElementById("nutSetWeightSpan");
+    if (nutWeightSpan) nutWeightSpan.textContent = `${setWeightDisplay} kg`;
+
+    const nutWeightPill = document.getElementById("nutSetWeightPill");
+    if (nutWeightPill) nutWeightPill.textContent = `SET WEIGHT: ${setWeightDisplay} KG`;
+
     const dProtein = document.getElementById("dashValProtein");
     if (dProtein) dProtein.textContent = `${nut.protein}g`;
+
+    const dProteinGoal = document.getElementById("dashProteinGoalText");
+    if (dProteinGoal) dProteinGoal.textContent = `of ${user.proteinGoal}g target (${setWeightDisplay}kg set)`;
 
     const dWater = document.getElementById("dashValWater");
     if (dWater) dWater.textContent = `${(waterTotalMl / 1000).toFixed(2)}L`;
@@ -2423,6 +3308,9 @@ class FitSportApp {
     this.renderRemindersList();
     this.updateDailySummaryCard();
     this.renderWaterScreen();
+    this.renderWeightComponents();
+    this.updateHeaderAutoResetBadge();
+    this.renderAnalyticsCharts();
   }
 }
 

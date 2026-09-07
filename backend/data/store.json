@@ -1,112 +1,114 @@
 {
   "user": {
     "id": "user_sahul_hameed",
-    "name": "Sahul Hameed",
-    "phone": "+91 99999 88888",
-    "avatar": "SH",
+    "name": "sahul",
+    "phone": "+91 6379048418",
+    "avatar": "SA",
     "height": 178,
     "currentWeight": 69.5,
     "startingWeight": 72,
-    "targetWeight": 65,
-    "targetDurationMonths": 3,
+    "targetWeight": 63.5,
+    "targetDurationMonths": 6,
     "interestedSports": [
       "Cycling",
+      "Running",
       "Football",
-      "Badminton",
-      "Running"
+      "Badminton"
     ],
     "fitnessGoal": "Improve Sports Performance",
-    "calorieGoal": 2200,
-    "proteinGoal": 120,
-    "carbsGoal": 250,
-    "fatGoal": 65,
+    "calorieGoal": 2198,
+    "proteinGoal": 127,
+    "carbsGoal": 285,
+    "fatGoal": 61,
     "waterGoal": 3500,
     "ironGoal": 18,
     "fiberGoal": 35
   },
   "meals": {
-    "breakfast": [],
+    "breakfast": [
+      {
+        "id": "m_1788804463215_99",
+        "foodId": "fru_apple_1",
+        "name": "Apple",
+        "category": "Fruit",
+        "grams": 50,
+        "calories": 26,
+        "protein": 0.2,
+        "carbs": 7,
+        "fat": 0.1,
+        "fiber": 1.2,
+        "iron": 0.06,
+        "keyVitamin": "Vit C 4.6mg"
+      },
+      {
+        "id": "m_1788804465866_639",
+        "foodId": "fru_apple_1",
+        "name": "Apple",
+        "category": "Fruit",
+        "grams": 50,
+        "calories": 26,
+        "protein": 0.2,
+        "carbs": 7,
+        "fat": 0.1,
+        "fiber": 1.2,
+        "iron": 0.06,
+        "keyVitamin": "Vit C 4.6mg"
+      },
+      {
+        "id": "m_1788804467360_459",
+        "foodId": "fru_apple_1",
+        "name": "Apple",
+        "category": "Fruit",
+        "grams": 50,
+        "calories": 26,
+        "protein": 0.2,
+        "carbs": 7,
+        "fat": 0.1,
+        "fiber": 1.2,
+        "iron": 0.06,
+        "keyVitamin": "Vit C 4.6mg"
+      },
+      {
+        "id": "m_1788804469341_268",
+        "foodId": "fru_apple_1",
+        "name": "Apple",
+        "category": "Fruit",
+        "grams": 50,
+        "calories": 26,
+        "protein": 0.2,
+        "carbs": 7,
+        "fat": 0.1,
+        "fiber": 1.2,
+        "iron": 0.06,
+        "keyVitamin": "Vit C 4.6mg"
+      }
+    ],
     "lunch": [],
     "dinner": [],
     "snacks": []
   },
-  "waterLogs": [
-    {
-      "id": "w_1788533571294",
-      "time": "08:22 PM",
-      "amount": 500
-    },
-    {
-      "id": "w_1788533572094",
-      "time": "08:22 PM",
-      "amount": 500
-    },
-    {
-      "id": "w_1788533575269",
-      "time": "08:22 PM",
-      "amount": 500
-    }
-  ],
-  "workouts": [
-    {
-      "id": "wk_1",
-      "title": "Leg Strength Foundations",
-      "category": "Equipment Workouts",
-      "subCategory": "Beginner",
-      "duration": 30,
-      "caloriesBurned": 220,
-      "completedAt": "05:30 PM"
-    },
-    {
-      "id": "wk_1788533521973",
-      "workoutId": "hw-adv",
-      "title": "HIIT Athletic Burn",
-      "category": "Home Workouts",
-      "subCategory": "Advanced",
-      "duration": 1,
-      "caloriesBurned": 280,
-      "completedAt": "08:22 PM"
-    },
-    {
-      "id": "wk_1788533542168",
-      "workoutId": "eq-adv",
-      "title": "Upper Body Athletic Power",
-      "category": "Equipment Workouts",
-      "subCategory": "Advanced",
-      "duration": 1,
-      "caloriesBurned": 310,
-      "completedAt": "08:22 PM"
-    }
-  ],
+  "waterLogs": [],
+  "workouts": [],
   "sportsActivities": [
     {
-      "id": "sp_1",
-      "sportId": "cycling",
-      "sportName": "Cycling",
-      "duration": 45,
-      "intensity": "Moderate",
-      "caloriesBurned": 380,
-      "completedAt": "07:00 PM"
-    },
-    {
-      "id": "sp_1788533531094",
+      "id": "sp_1788804446977",
       "sportId": "cycling",
       "sportName": "Cycling",
       "duration": 45,
       "intensity": "Moderate",
       "caloriesBurned": 378,
-      "completedAt": "08:22 PM"
+      "completedAt": "11:37 PM"
     }
   ],
   "reminders": [
     {
       "id": "r1",
       "title": "Breakfast",
-      "time": "08:30 PM",
+      "time": "11:16 PM",
       "repeat": "Everyday",
       "type": "meal",
       "icon": "apple",
-      "active": false
+      "active": true
     },
     {
       "id": "r2",
@@ -156,224 +158,59 @@
   ],
   "history": [
     {
-      "id": "h_tg_1788551751271",
-      "type": "telegram",
-      "title": "Telegram History Dispatched",
-      "subtitle": "Sent to @sgifesdf_bot",
-      "metric": "Delivered",
-      "subMetric": "Chat ID: 7032355691",
-      "time": "01:25 AM",
-      "date": "Today",
-      "icon": "activity"
-    },
-    {
-      "id": "h_tg_1788550482506",
-      "type": "telegram",
-      "title": "Telegram History Dispatched",
-      "subtitle": "Sent to @sgifesdf_bot",
-      "metric": "Delivered",
-      "subMetric": "Chat ID: 5490113240",
-      "time": "01:04 AM",
-      "date": "Today",
-      "icon": "activity"
-    },
-    {
-      "id": "h_tg_1788546092286",
-      "type": "telegram",
-      "title": "Telegram History Dispatched",
-      "subtitle": "Sent to @sgifesdf_bot",
-      "metric": "Delivered",
-      "subMetric": "Chat ID: 7032355691",
-      "time": "11:51 PM",
-      "date": "Today",
-      "icon": "activity"
-    },
-    {
-      "id": "h_tg_auto_1788534619136",
-      "type": "telegram",
-      "title": "Automated Daily History Sent to Telegram",
-      "subtitle": "Scheduled delivery at 08:40 PM",
-      "metric": "Delivered",
-      "subMetric": "@sgifesdf_bot",
-      "time": "08:40 PM",
-      "date": "Today",
-      "icon": "clock"
-    },
-    {
-      "id": "h_tg_test_1788534062905",
-      "type": "telegram",
-      "title": "Telegram Automated Schedule Test Sent",
-      "subtitle": "Target: @sgifesdf_bot",
-      "metric": "Delivered",
-      "subMetric": "Chat ID: 7032355691",
-      "time": "08:31 PM",
-      "date": "Today",
-      "icon": "clock"
-    },
-    {
-      "id": "h_tg_1788533595689",
-      "type": "telegram",
-      "title": "Telegram History Dispatched",
-      "subtitle": "Sent to @sgifesdf_bot",
-      "metric": "Delivered",
-      "subMetric": "Chat ID: 7032355691",
-      "time": "08:23 PM",
-      "date": "Today",
-      "icon": "activity"
-    },
-    {
-      "id": "h_1788533575269",
-      "type": "water",
-      "title": "Hydration Check-in",
-      "subtitle": "Logged +500 ml fluid intake",
-      "metric": "+500 ml",
-      "subMetric": "Total today: 1.50 L",
-      "time": "08:22 PM",
-      "date": "Today",
-      "icon": "droplet"
-    },
-    {
-      "id": "h_1788533572094",
-      "type": "water",
-      "title": "Hydration Check-in",
-      "subtitle": "Logged +500 ml fluid intake",
-      "metric": "+500 ml",
-      "subMetric": "Total today: 1.00 L",
-      "time": "08:22 PM",
-      "date": "Today",
-      "icon": "droplet"
-    },
-    {
-      "id": "h_1788533571294",
-      "type": "water",
-      "title": "Hydration Check-in",
-      "subtitle": "Logged +500 ml fluid intake",
-      "metric": "+500 ml",
-      "subMetric": "Total today: 0.50 L",
-      "time": "08:22 PM",
-      "date": "Today",
-      "icon": "droplet"
-    },
-    {
-      "id": "h_1788533566055",
-      "type": "meals",
-      "title": "Snacks: Pineapple",
-      "subtitle": "50g • Logged to meal tracker",
-      "metric": "25 kcal",
-      "subMetric": "0.3g Protein • 0.7g Fiber",
-      "time": "08:22 PM",
-      "date": "Today",
-      "icon": "apple"
-    },
-    {
-      "id": "h_1788533565180",
-      "type": "meals",
-      "title": "Snacks: Mango",
-      "subtitle": "50g • Logged to meal tracker",
-      "metric": "30 kcal",
-      "subMetric": "0.4g Protein • 0.8g Fiber",
-      "time": "08:22 PM",
-      "date": "Today",
-      "icon": "apple"
-    },
-    {
-      "id": "h_1788533562013",
-      "type": "meals",
-      "title": "Lunch: Grapes",
-      "subtitle": "50g • Logged to meal tracker",
-      "metric": "34.5 kcal",
-      "subMetric": "0.4g Protein • 0.5g Fiber",
-      "time": "08:22 PM",
-      "date": "Today",
-      "icon": "apple"
-    },
-    {
-      "id": "h_1788533561100",
-      "type": "meals",
-      "title": "Lunch: Orange",
-      "subtitle": "50g • Logged to meal tracker",
-      "metric": "23.5 kcal",
-      "subMetric": "0.5g Protein • 1.2g Fiber",
-      "time": "08:22 PM",
-      "date": "Today",
-      "icon": "apple"
-    },
-    {
-      "id": "h_1788533560106",
-      "type": "meals",
-      "title": "Lunch: Banana",
-      "subtitle": "50g • Logged to meal tracker",
-      "metric": "44.5 kcal",
-      "subMetric": "0.6g Protein • 1.3g Fiber",
-      "time": "08:22 PM",
-      "date": "Today",
-      "icon": "apple"
-    },
-    {
-      "id": "h_1788533556560",
-      "type": "meals",
-      "title": "Breakfast: Orange",
-      "subtitle": "50g • Logged to meal tracker",
-      "metric": "23.5 kcal",
-      "subMetric": "0.5g Protein • 1.2g Fiber",
-      "time": "08:22 PM",
-      "date": "Today",
-      "icon": "apple"
-    },
-    {
-      "id": "h_1788533555683",
-      "type": "meals",
-      "title": "Breakfast: Banana",
-      "subtitle": "50g • Logged to meal tracker",
-      "metric": "44.5 kcal",
-      "subMetric": "0.6g Protein • 1.3g Fiber",
-      "time": "08:22 PM",
-      "date": "Today",
-      "icon": "apple"
-    },
-    {
-      "id": "h_1788533554631",
+      "id": "h_1788804469341",
       "type": "meals",
       "title": "Breakfast: Apple",
       "subtitle": "50g • Logged to meal tracker",
       "metric": "26 kcal",
       "subMetric": "0.2g Protein • 1.2g Fiber",
-      "time": "08:22 PM",
+      "time": "11:37 PM",
       "date": "Today",
       "icon": "apple"
     },
     {
-      "id": "h_1788533542168",
-      "type": "workouts",
-      "title": "Workout: Upper Body Athletic Power",
-      "subtitle": "Equipment Workouts (Advanced) completed",
-      "metric": "310 kcal burned",
-      "subMetric": "Duration: 1 min • Completed",
-      "time": "08:22 PM",
+      "id": "h_1788804467360",
+      "type": "meals",
+      "title": "Breakfast: Apple",
+      "subtitle": "50g • Logged to meal tracker",
+      "metric": "26 kcal",
+      "subMetric": "0.2g Protein • 1.2g Fiber",
+      "time": "11:37 PM",
       "date": "Today",
-      "icon": "dumbbell"
+      "icon": "apple"
     },
     {
-      "id": "h_1788533531094",
+      "id": "h_1788804465866",
+      "type": "meals",
+      "title": "Breakfast: Apple",
+      "subtitle": "50g • Logged to meal tracker",
+      "metric": "26 kcal",
+      "subMetric": "0.2g Protein • 1.2g Fiber",
+      "time": "11:37 PM",
+      "date": "Today",
+      "icon": "apple"
+    },
+    {
+      "id": "h_1788804463215",
+      "type": "meals",
+      "title": "Breakfast: Apple",
+      "subtitle": "50g • Logged to meal tracker",
+      "metric": "26 kcal",
+      "subMetric": "0.2g Protein • 1.2g Fiber",
+      "time": "11:37 PM",
+      "date": "Today",
+      "icon": "apple"
+    },
+    {
+      "id": "h_1788804446977",
       "type": "sports",
       "title": "Sport: Cycling",
       "subtitle": "Moderate intensity session logged",
       "metric": "378 kcal burned",
       "subMetric": "Duration: 45 min",
-      "time": "08:22 PM",
+      "time": "11:37 PM",
       "date": "Today",
       "icon": "bike"
-    },
-    {
-      "id": "h_1788533521973",
-      "type": "workouts",
-      "title": "Workout: HIIT Athletic Burn",
-      "subtitle": "Home Workouts (Advanced) completed",
-      "metric": "280 kcal burned",
-      "subMetric": "Duration: 1 min • Completed",
-      "time": "08:22 PM",
-      "date": "Today",
-      "icon": "dumbbell"
     }
   ],
   "weightHistory": [
@@ -404,9 +241,9 @@
   ],
   "telegramSchedule": {
     "enabled": true,
-    "time": "22:15",
-    "time12": "10:15 PM",
-    "lastSentDate": null,
+    "time": "23:25",
+    "time12": "11:25 PM",
+    "lastSentDate": "2026-09-07",
     "targetChatId": "7032355691"
   }
 }

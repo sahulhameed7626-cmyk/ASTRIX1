@@ -34,6 +34,27 @@ export function handleUserRoutes(req, res, url, body) {
       db.store.user.targetDurationMonths = parseInt(body.targetDurationMonths, 10);
     }
 
+    // Dynamic 1 kg = 7,700 kcal & macro grams based on setted weight
+    const curW = db.store.user.currentWeight || 69.5;
+    const tgtW = db.store.user.targetWeight || 65.0;
+    const setW = db.store.user.targetWeight || curW;
+    const months = db.store.user.targetDurationMonths || 3;
+    const height = db.store.user.height || 178;
+    const bmr = Math.round(10 * curW + 6.25 * height - 5 * 24 + 5);
+    const maintenance = Math.round(bmr * 1.45);
+    const diff = Math.round((tgtW - curW) * 10) / 10;
+    const totalDays = Math.max(15, months * 30);
+    const dailyAdj = Math.round((Math.abs(diff) * 7700) / totalDays);
+    const dailyGoal = diff < -0.1 ? Math.max(1200, maintenance - dailyAdj) : diff > 0.1 ? (maintenance + dailyAdj) : maintenance;
+    const proteinGoal = Math.round(setW * 2.0);
+    const fatGoal = Math.round((dailyGoal * 0.25) / 9);
+    const carbsGoal = Math.max(50, Math.round((dailyGoal - (proteinGoal * 4) - (fatGoal * 9)) / 4));
+
+    db.store.user.calorieGoal = dailyGoal;
+    db.store.user.proteinGoal = proteinGoal;
+    db.store.user.fatGoal = fatGoal;
+    db.store.user.carbsGoal = carbsGoal;
+
     db.saveStore();
 
     res.writeHead(200, { 'Content-Type': 'application/json' });

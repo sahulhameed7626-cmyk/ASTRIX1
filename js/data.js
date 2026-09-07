@@ -10,10 +10,13 @@ export const INITIAL_USER = {
   targetDurationMonths: 3,
   interestedSports: ["Cycling", "Football", "Badminton", "Running"],
   fitnessGoal: "Improve Sports Performance",
-  calorieGoal: 2200,
-  proteinGoal: 120, // g
-  carbsGoal: 250, // g
-  fatGoal: 65, // g
+  calorieGoal: 2063, // Calculated via 1 kg = 7,700 kcal rule: 2,448 maintenance - 385 daily deficit
+  maintenanceCalories: 2448,
+  dailyCalorieAdjustment: 385,
+  dailyBurnTarget: 635,
+  proteinGoal: 130, // g (2.0g/kg of setted 65kg target weight)
+  carbsGoal: 258, // g
+  fatGoal: 57, // g
   waterGoal: 3500, // ml (3 to 4 Liter athletic target)
   ironGoal: 18 // mg
 };
@@ -34,74 +37,302 @@ export const FOOD_DATABASE = [
 ];
 
 export const WORKOUT_CATEGORIES = [
+  // 1. BASIC WORKOUTS - NO EQUIPMENT (From PDF Guide)
   {
-    id: "hw-beg",
+    id: "hw-pushups",
     category: "Home Workouts",
-    subCategory: "Beginner",
-    title: "Full Body Beginner",
-    duration: 20,
-    calories: 120,
-    intensity: "Low-Moderate",
-    exercisesCount: 4,
-    description: "Foundational bodyweight movements designed to build functional mobility and strength at home without equipment.",
-    exercises: [
-      { name: "Bodyweight Squats", sets: 3, reps: 12, target: "Quadriceps, Glutes", restSec: 45 },
-      { name: "Knee Push Ups", sets: 3, reps: 10, target: "Chest, Triceps, Core", restSec: 45 },
-      { name: "Walking Lunges", sets: 3, reps: 10, target: "Hamstrings, Glutes", restSec: 45 },
-      { name: "Plank Hold", sets: 3, reps: "30 sec", target: "Core Stability", restSec: 60 }
-    ]
-  },
-  {
-    id: "hw-adv",
-    category: "Home Workouts",
-    subCategory: "Advanced",
-    title: "HIIT Athletic Burn",
-    duration: 25,
-    calories: 280,
-    intensity: "High",
-    exercisesCount: 5,
-    description: "High-intensity intervals targeted at explosive power, cardiovascular endurance, and rapid athletic conditioning.",
-    exercises: [
-      { name: "Burpees", sets: 4, reps: 15, target: "Full Body, Cardio", restSec: 30 },
-      { name: "Jump Squats", sets: 4, reps: 16, target: "Fast-twitch Quads, Calves", restSec: 40 },
-      { name: "Diamond Push Ups", sets: 3, reps: 12, target: "Triceps, Chest", restSec: 45 },
-      { name: "Mountain Climbers", sets: 4, reps: "45 sec", target: "Core, Shoulders", restSec: 30 },
-      { name: "Bicycle Crunches", sets: 3, reps: 20, target: "Obliques, Lower Abs", restSec: 30 }
-    ]
-  },
-  {
-    id: "eq-beg",
-    category: "Equipment Workouts",
-    subCategory: "Beginner",
-    title: "Leg Strength Foundations",
+    subCategory: "Basic (No Equipment)",
+    title: "Push-Ups Foundation",
     duration: 30,
-    calories: 220,
-    intensity: "Moderate",
-    exercisesCount: 4,
-    description: "Dumbbell & barbell routine to establish knee stability, hip hinge mechanics, and lower body athletic power.",
+    calories: 135,
+    intensity: "Basic",
+    difficulty: "Basic",
+    equipmentNeeded: "None",
+    exercisesCount: 3,
+    description: "Foundational upper-body pushing pattern from the Home Workout Guide. Emphasizes chest, triceps, shoulders, and core stability.",
+    variations: "Knee push-ups, wide-grip, diamond push-ups",
     exercises: [
-      { name: "Goblet Squats (Dumbbell)", sets: 3, reps: 12, target: "Quadriceps, Glutes", restSec: 60 },
-      { name: "Romanian Deadlifts", sets: 3, reps: 10, target: "Hamstrings, Lower Back", restSec: 60 },
-      { name: "Dumbbell Step Ups", sets: 3, reps: 10, target: "Glutes, Balance", restSec: 45 },
-      { name: "Standing Calf Raises", sets: 4, reps: 15, target: "Gastrocnemius, Soleus", restSec: 45 }
+      { name: "Standard Push-Ups", sets: 3, reps: "8-12 reps", target: "Pectorals, Triceps, Anterior Deltoid", restSec: 45, howTo: "Lie face down, hands shoulder-width apart. Push body up until arms are straight, lower back down.", caloriesPer30Min: "120-150 cal" },
+      { name: "Wide-Grip Push-Ups", sets: 3, reps: "8-12 reps", target: "Outer Pectorals, Deltoids", restSec: 45, howTo: "Place hands 6-8 inches wider than shoulder width to maximize chest activation and pec stretch.", caloriesPer30Min: "120-150 cal" },
+      { name: "Diamond Push-Ups", sets: 3, reps: "8-10 reps", target: "Triceps, Inner Chest, Core", restSec: 60, howTo: "Place hands together directly under center of chest with thumbs and index fingers touching to form a diamond.", caloriesPer30Min: "120-150 cal" }
     ]
   },
   {
-    id: "eq-adv",
-    category: "Equipment Workouts",
-    subCategory: "Advanced",
-    title: "Upper Body Athletic Power",
-    duration: 35,
-    calories: 310,
-    intensity: "High",
-    exercisesCount: 5,
-    description: "Compound lifts and rotational accessory work to optimize sports pushing, pulling, and overhead strength.",
+    id: "hw-squats",
+    category: "Home Workouts",
+    subCategory: "Basic (No Equipment)",
+    title: "Bodyweight Squats & Mobility",
+    duration: 30,
+    calories: 155,
+    intensity: "Basic",
+    difficulty: "Basic",
+    equipmentNeeded: "None",
+    exercisesCount: 3,
+    description: "Fundamental lower body movement pattern. Strengthens quadriceps, glutes, hamstrings, and promotes hip and ankle mobility.",
+    variations: "Air squats, tempo squats, jump squats",
     exercises: [
-      { name: "Barbell Bench Press", sets: 4, reps: 8, target: "Pectorals, Anterior Deltoid", restSec: 75 },
-      { name: "Bent Over Barbell Rows", sets: 4, reps: 10, target: "Latissimus Dorsi, Rhomboids", restSec: 60 },
-      { name: "Overhead Dumbbell Press", sets: 3, reps: 10, target: "Deltoids, Upper Traps", restSec: 60 },
-      { name: "Pull-Ups / Lat Pulldown", sets: 3, reps: 10, target: "Lats, Biceps", restSec: 60 },
-      { name: "Cable Woodchoppers", sets: 3, reps: 12, target: "Rotational Core Power", restSec: 45 }
+      { name: "Bodyweight Squats", sets: 3, reps: "12-15 reps", target: "Quadriceps, Glutes, Hamstrings", restSec: 45, howTo: "Feet shoulder-width apart, lower hips back and down like sitting in a chair, keep chest up.", caloriesPer30Min: "140-170 cal" },
+      { name: "Tempo Squats (3s Descent)", sets: 3, reps: "10-12 reps", target: "Quadriceps, Gluteus Maximus", restSec: 45, howTo: "Take 3 full seconds to descend into bottom of squat, pause 1 second, then explode upward.", caloriesPer30Min: "140-170 cal" },
+      { name: "Prisoner Squats", sets: 3, reps: "12-15 reps", target: "Upper Back Posture, Quads", restSec: 45, howTo: "Interlace hands behind head, keeping elbows flared wide to force thoracic extension while squatting.", caloriesPer30Min: "140-170 cal" }
+    ]
+  },
+  {
+    id: "hw-plank",
+    category: "Home Workouts",
+    subCategory: "Basic (No Equipment)",
+    title: "Plank Core Isometric Series",
+    duration: 30,
+    calories: 115,
+    intensity: "Basic",
+    difficulty: "Basic",
+    equipmentNeeded: "None",
+    exercisesCount: 3,
+    description: "Isometric core strengthening routine from the guide. Develops anti-extension spinal stability and full anterior chain endurance.",
+    variations: "Side plank, plank with leg lifts, plank walks",
+    exercises: [
+      { name: "Forearm Plank Hold", sets: 3, reps: "20-60 sec", target: "Rectus Abdominis, Transverse Core", restSec: 45, howTo: "Hold a straight line from head to heels on forearms and toes. Squeeze glutes and brace abdominal wall.", caloriesPer30Min: "100-130 cal" },
+      { name: "Side Plank (Left & Right)", sets: 3, reps: "20-45 sec/side", target: "Obliques, Quadratus Lumborum", restSec: 45, howTo: "Stack feet, rest on one forearm directly under shoulder, lift hips high to form a straight diagonal line.", caloriesPer30Min: "100-130 cal" },
+      { name: "Plank with Alternating Leg Lifts", sets: 3, reps: "10 per leg", target: "Glute Activation, Posterior Core", restSec: 45, howTo: "From standard plank, lift one foot 6-8 inches off ground while keeping hips completely level.", caloriesPer30Min: "100-130 cal" }
+    ]
+  },
+  {
+    id: "hw-lunges",
+    category: "Home Workouts",
+    subCategory: "Basic (No Equipment)",
+    title: "Unilateral Lunges Matrix",
+    duration: 30,
+    calories: 165,
+    intensity: "Basic",
+    difficulty: "Basic",
+    equipmentNeeded: "None",
+    exercisesCount: 3,
+    description: "Single-leg strength and pelvic stabilization routine. Fixes muscular imbalances between legs and strengthens knees.",
+    variations: "Walking lunges, reverse lunges, jumping lunges",
+    exercises: [
+      { name: "Alternating Forward Lunges", sets: 3, reps: "10-12 per leg", target: "Quadriceps, Glutes, Hamstrings", restSec: 45, howTo: "Step forward, lower back knee toward ground, push back to start. Alternate legs.", caloriesPer30Min: "150-180 cal" },
+      { name: "Reverse Lunges", sets: 3, reps: "10-12 per leg", target: "Glute Isolation, Hamstrings", restSec: 45, howTo: "Step backward with one foot and lower into lunge. Minimizes shear forces across knee joint.", caloriesPer30Min: "150-180 cal" },
+      { name: "Walking Lunges", sets: 3, reps: "10 per leg", target: "Functional Hip Extensors, Calves", restSec: 45, howTo: "Lunge forward continuously without stepping back, driving directly into next forward stride.", caloriesPer30Min: "150-180 cal" }
+    ]
+  },
+  {
+    id: "hw-burpees",
+    category: "Home Workouts",
+    subCategory: "Basic (No Equipment)",
+    title: "Burpees Conditioning & Cardio",
+    duration: 30,
+    calories: 225,
+    intensity: "Basic to Moderate",
+    difficulty: "Basic",
+    equipmentNeeded: "None",
+    exercisesCount: 3,
+    description: "Full-body cardio and athletic strength conditioning from the guide. Elevates heart rate and burns up to 250 kcal.",
+    variations: "Standard burpees, chest-to-floor burpees, step-back burpees",
+    exercises: [
+      { name: "Standard Burpees", sets: 4, reps: "8-10 reps", target: "Full Body Cardio & Calves", restSec: 60, howTo: "Squat down, jump feet back into push-up position, jump feet forward, jump up.", caloriesPer30Min: "200-250 cal" },
+      { name: "Burpees with Push-Up", sets: 3, reps: "8 reps", target: "Pectorals, Core, Legs", restSec: 60, howTo: "Lower completely flat into push-up before snapping hips and jumping upward.", caloriesPer30Min: "200-250 cal" },
+      { name: "Low-Impact Step Burpees", sets: 3, reps: "10 reps", target: "Aerobic Capacity, Knee-Friendly", restSec: 45, howTo: "Step feet back one at a time instead of jumping back, ideal for pacing and joints.", caloriesPer30Min: "180-220 cal" }
+    ]
+  },
+
+  // 2. ADVANCED WORKOUTS - NO EQUIPMENT (From PDF Guide)
+  {
+    id: "hw-pistol-squats",
+    category: "Home Workouts",
+    subCategory: "Advanced (No Equipment)",
+    title: "Pistol Squats Mastery",
+    duration: 30,
+    calories: 155,
+    intensity: "Advanced",
+    difficulty: "Advanced",
+    equipmentNeeded: "None",
+    exercisesCount: 3,
+    description: "Elite single-leg calisthenics from the guide. Very challenging balance, ankle mobility, and quad strength.",
+    variations: "Assisted pistol squats, elevated pistol squats, full pistols",
+    exercises: [
+      { name: "Pistol Squats (Single Leg)", sets: 3, reps: "5-8 per leg", target: "Single-leg Balance, Quads, Glutes", restSec: 60, howTo: "Single-leg deep squat while other leg extends forward.", caloriesPer30Min: "140-170 cal" },
+      { name: "Box/Bench Assisted Pistol Squats", sets: 3, reps: "8 per leg", target: "Unilateral Eccentric Control", restSec: 45, howTo: "Lower on one leg down to bench surface, touch lightly, and drive upward through heel.", caloriesPer30Min: "140-170 cal" },
+      { name: "Single-Leg Balance Holds", sets: 3, reps: "30 sec/leg", target: "Ankle Stabilizers, Core", restSec: 30, howTo: "Stand on one foot with opposite leg extended forward, maintaining perfect posture.", caloriesPer30Min: "100-130 cal" }
+    ]
+  },
+  {
+    id: "hw-handstand",
+    category: "Home Workouts",
+    subCategory: "Advanced (No Equipment)",
+    title: "Handstand Hold & Walk",
+    duration: 30,
+    calories: 170,
+    intensity: "Advanced",
+    difficulty: "Advanced",
+    equipmentNeeded: "Wall / Open Floor",
+    exercisesCount: 3,
+    description: "Inverted calisthenics pattern from the guide. Develops supreme shoulder, scapular, and core stabilizer strength.",
+    variations: "Wall-assisted handstand, freestanding handstand, handstand shoulder taps",
+    exercises: [
+      { name: "Handstand Hold (Wall-assisted)", sets: 4, reps: "10-30 sec", target: "Deltoids, Trapezius, Core", restSec: 60, howTo: "Kick up against wall or free-standing, hold inverted position.", caloriesPer30Min: "150-190 cal" },
+      { name: "Wall Walk Up", sets: 3, reps: "5 reps", target: "Anterior Deltoids, Core Bracing", restSec: 60, howTo: "Start in pushup position with feet near wall, walk feet up wall while walking hands backward.", caloriesPer30Min: "150-190 cal" },
+      { name: "Handstand Shoulder Taps", sets: 3, reps: "6-8 taps/side", target: "Unilateral Shoulder Strength", restSec: 60, howTo: "In handstand against wall, shift weight to one hand and tap opposite shoulder.", caloriesPer30Min: "150-190 cal" }
+    ]
+  },
+  {
+    id: "hw-decline-pushups",
+    category: "Home Workouts",
+    subCategory: "Advanced (No Equipment)",
+    title: "Decline Push-Ups & Jump Squats",
+    duration: 30,
+    calories: 190,
+    intensity: "Advanced",
+    difficulty: "Advanced",
+    equipmentNeeded: "Elevated Platform / Chair",
+    exercisesCount: 3,
+    description: "Significantly harder upper push incline combined with explosive plyometric jump squats from the guide.",
+    variations: "Decline push-ups, explosive jump squats, decline plank",
+    exercises: [
+      { name: "Decline Push-Ups", sets: 3, reps: "8-10 reps", target: "Upper Pectorals, Front Deltoids", restSec: 45, howTo: "Feet elevated, perform push-ups with increased incline.", caloriesPer30Min: "140-170 cal" },
+      { name: "Explosive Jump Squats", sets: 3, reps: "10-12 reps", target: "Plyometric Power, Fast-Twitch Quads", restSec: 45, howTo: "Squat down, explosively jump up, land softly and repeat immediately.", caloriesPer30Min: "200-250 cal" },
+      { name: "Decline Plank Hold", sets: 3, reps: "40 sec", target: "Upper Core, Serratus Anterior", restSec: 45, howTo: "Hold forearm plank with feet elevated 12-18 inches on platform.", caloriesPer30Min: "120-150 cal" }
+    ]
+  },
+  {
+    id: "hw-circuit-noequip",
+    category: "Home Workouts",
+    subCategory: "30-Min Circuit",
+    title: "30-Min Home Circuit (No Equipment)",
+    duration: 30,
+    calories: 1000,
+    intensity: "Full Athletic Circuit",
+    difficulty: "All Levels",
+    equipmentNeeded: "None",
+    exercisesCount: 5,
+    description: "Complete 30-Minute No Equipment Circuit from Page 3 of Guide: 3 rounds of Push-ups, Squats, Burpees, Plank, and Lunges. Rest 60s between rounds. Total burn: 900-1100 calories!",
+    circuitRounds: 3,
+    restBetweenRounds: "60 seconds",
+    exercises: [
+      { name: "Push-ups", sets: 3, reps: "12 reps (36 total)", target: "Pectorals, Triceps, Core", restSec: 15, howTo: "12 push-ups per round. Burns 20 cal/round.", caloriesPer30Min: "20 cal/round" },
+      { name: "Bodyweight Squats", sets: 3, reps: "15 reps (45 total)", target: "Quadriceps, Glutes", restSec: 15, howTo: "15 deep squats per round. Burns 25 cal/round.", caloriesPer30Min: "25 cal/round" },
+      { name: "Burpees", sets: 3, reps: "10 reps (30 total)", target: "Full Body Cardio & Conditioning", restSec: 15, howTo: "10 explosive burpees per round. Burns 35 cal/round.", caloriesPer30Min: "35 cal/round" },
+      { name: "Plank Hold", sets: 3, reps: "45 sec (2:15 total)", target: "Core Stability", restSec: 15, howTo: "45 seconds unbroken forearm plank. Burns 15 cal/round.", caloriesPer30Min: "15 cal/round" },
+      { name: "Lunges", sets: 3, reps: "10/leg (60 total)", target: "Hamstrings, Glutes, Calves", restSec: 60, howTo: "10 lunges per leg. Burns 30 cal/round. Rest 60 sec after this exercise before starting next round.", caloriesPer30Min: "30 cal/round" }
+    ]
+  },
+
+  // 3. BASIC WORKOUTS - WITH EQUIPMENT (From PDF Guide)
+  {
+    id: "eq-dumbbell-bench",
+    category: "Equipment Workouts",
+    subCategory: "Basic (With Equipment)",
+    title: "Dumbbell Bench Press & Pushes",
+    duration: 30,
+    calories: 145,
+    intensity: "Basic",
+    difficulty: "Basic",
+    equipmentNeeded: "Dumbbells, Bench (optional)",
+    exercisesCount: 3,
+    description: "Classic resistance pushing pattern from the guide. Increases chest, shoulder, and triceps pressing strength.",
+    variations: "Flat bench press, floor press, neutral grip press",
+    exercises: [
+      { name: "Dumbbell Bench Press", sets: 3, reps: "8-12 reps", target: "Pectorals, Anterior Deltoids, Triceps", restSec: 60, howTo: "Lie on bench, hold dumbbells at chest level, press up until arms extend.", caloriesPer30Min: "130-160 cal" },
+      { name: "Dumbbell Floor Press", sets: 3, reps: "10-12 reps", target: "Triceps Lockout, Chest", restSec: 45, howTo: "Lie flat on floor, lower upper arms until triceps touch floor lightly, pause, then press upward.", caloriesPer30Min: "130-160 cal" },
+      { name: "Neutral Grip Dumbbell Press", sets: 3, reps: "10 reps", target: "Shoulder Joint Friendly, Triceps", restSec: 45, howTo: "Press dumbbells with palms facing each other throughout range of motion.", caloriesPer30Min: "130-160 cal" }
+    ]
+  },
+  {
+    id: "eq-kettlebell-swings",
+    category: "Equipment Workouts",
+    subCategory: "Basic (With Equipment)",
+    title: "Kettlebell Swings & Posterior Chain",
+    duration: 30,
+    calories: 200,
+    intensity: "Moderate",
+    difficulty: "Basic",
+    equipmentNeeded: "Kettlebell (or Dumbbell)",
+    exercisesCount: 3,
+    description: "Explosive posterior chain workout from the guide. Cardio plus glute, hamstring, and lumbar endurance.",
+    variations: "Russian swing, single-arm swing, goblet squat",
+    exercises: [
+      { name: "Kettlebell Swings", sets: 3, reps: "12-15 reps", target: "Hamstrings, Glutes, Core, Cardio", restSec: 45, howTo: "Swing kettlebell between legs with hip thrust, control the swing.", caloriesPer30Min: "180-220 cal" },
+      { name: "Single-Arm Kettlebell Swings", sets: 3, reps: "10 reps/arm", target: "Anti-Rotational Core, Glutes", restSec: 45, howTo: "Perform swing using single hand, resisting torso rotation with core.", caloriesPer30Min: "180-220 cal" },
+      { name: "Kettlebell Goblet Squats", sets: 3, reps: "12 reps", target: "Quads, Upper Back, Core", restSec: 45, howTo: "Hold kettlebell horn at chest, squat deeply between heels.", caloriesPer30Min: "160-190 cal" }
+    ]
+  },
+  {
+    id: "eq-band-rows",
+    category: "Equipment Workouts",
+    subCategory: "Basic (With Equipment)",
+    title: "Resistance Band Rows & Pulls",
+    duration: 30,
+    calories: 125,
+    intensity: "Basic",
+    difficulty: "Basic",
+    equipmentNeeded: "Resistance Band",
+    exercisesCount: 3,
+    description: "Posture correction and back pulling strength from the guide. Directly activates lats, rhomboids, and biceps.",
+    variations: "Seated band row, band pull-aparts, band lat pulldown",
+    exercises: [
+      { name: "Resistance Band Rows", sets: 3, reps: "10-12 reps", target: "Latissimus Dorsi, Rhomboids, Biceps", restSec: 45, howTo: "Anchor band, row the handles toward your chest, control the return.", caloriesPer30Min: "110-140 cal" },
+      { name: "Band Pull-Aparts", sets: 3, reps: "15 reps", target: "Rear Deltoids, Scapular Retractors", restSec: 30, howTo: "Hold band shoulder-width with straight arms in front of chest, pull hands apart sideways.", caloriesPer30Min: "100-120 cal" },
+      { name: "Band Lat Pulldown", sets: 3, reps: "12 reps", target: "Lats, Posterior Deltoid", restSec: 45, howTo: "Anchor band overhead, pull handles down toward collarbone squeezing shoulder blades.", caloriesPer30Min: "110-140 cal" }
+    ]
+  },
+
+  // 4. ADVANCED WORKOUTS - WITH EQUIPMENT (From PDF Guide)
+  {
+    id: "eq-dumbbell-snatches",
+    category: "Equipment Workouts",
+    subCategory: "Advanced (With Equipment)",
+    title: "Dumbbell Snatches & Kinetic Power",
+    duration: 30,
+    calories: 245,
+    intensity: "High Intensity",
+    difficulty: "Advanced",
+    equipmentNeeded: "Dumbbell",
+    exercisesCount: 3,
+    description: "Explosive Olympic-style athletic lift from the guide. Develops power, coordination, and full-body kinetic energy.",
+    variations: "Alternating snatches, hang snatches, clean and press",
+    exercises: [
+      { name: "Dumbbell Snatches", sets: 3, reps: "6-8 per arm", target: "Kinetic Chain Power, Shoulders, Glutes", restSec: 60, howTo: "Explosive movement pulling dumbbell from ground to overhead in one motion.", caloriesPer30Min: "220-270 cal" },
+      { name: "Hang Dumbbell Snatches", sets: 3, reps: "6 per arm", target: "Hip Drive, Trap Activation", restSec: 60, howTo: "Start dumbbell at knee level, jump and pull under dumbbell into lockout.", caloriesPer30Min: "220-270 cal" },
+      { name: "Dumbbell Clean and Press", sets: 3, reps: "8 reps", target: "Posterior Chain, Overhead Shoulders", restSec: 60, howTo: "Clean dumbbells to shoulders, pause, and drive overhead into locked arms.", caloriesPer30Min: "200-250 cal" }
+    ]
+  },
+  {
+    id: "eq-weighted-pullups",
+    category: "Equipment Workouts",
+    subCategory: "Advanced (With Equipment)",
+    title: "Weighted Pull-Ups & Heavy Front Squats",
+    duration: 35,
+    calories: 200,
+    intensity: "Advanced",
+    difficulty: "Advanced",
+    equipmentNeeded: "Pull-up bar, Weight Belt / Vest, Barbell",
+    exercisesCount: 3,
+    description: "Supreme strength pairing from the guide. Combines loaded pull-ups with heavy upright front squats.",
+    variations: "Weight belt, weighted vest, dumbbell between feet",
+    exercises: [
+      { name: "Weighted Pull-Ups", sets: 3, reps: "5-8 reps", target: "Latissimus Dorsi, Biceps, Upper Back", restSec: 75, howTo: "Add weight belt or hold dumbbell between feet while performing pull-ups.", caloriesPer30Min: "180-220 cal" },
+      { name: "Barbell / Weighted Front Squats", sets: 3, reps: "6-10 reps", target: "Quad-dominant Upright Torso", restSec: 75, howTo: "Hold weight at chest level, perform deep squat maintaining upright torso.", caloriesPer30Min: "170-210 cal" },
+      { name: "Chin-Ups (Bodyweight / Weighted)", sets: 3, reps: "8 reps", target: "Biceps, Lower Traps", restSec: 60, howTo: "Supinated grip (palms facing you), pull until chin clears bar.", caloriesPer30Min: "160-200 cal" }
+    ]
+  },
+  {
+    id: "eq-circuit-equip",
+    category: "Equipment Workouts",
+    subCategory: "30-Min Circuit",
+    title: "30-Min Home Circuit (With Equipment)",
+    duration: 30,
+    calories: 1225,
+    intensity: "Maximum Burn Circuit",
+    difficulty: "Advanced",
+    equipmentNeeded: "Dumbbells, Kettlebell, Resistance Band",
+    exercisesCount: 5,
+    description: "Complete 30-Minute With Equipment Circuit from Page 3 of Guide: 3 rounds of Dumbbell Bench Press, Kettlebell Swings, Resistance Band Rows, Dumbbell Snatches, and Weighted Squats. Rest 90s between rounds. Total burn: 1100-1350 calories!",
+    circuitRounds: 3,
+    restBetweenRounds: "90 seconds",
+    exercises: [
+      { name: "Dumbbell Bench Press", sets: 3, reps: "12 reps (36 total)", target: "Chest & Triceps", restSec: 20, howTo: "12 dumbbell bench presses per round. Burns 25 cal/round.", caloriesPer30Min: "25 cal/round" },
+      { name: "Kettlebell Swings", sets: 3, reps: "15 reps (45 total)", target: "Cardio + Posterior Chain", restSec: 20, howTo: "15 explosive hip-thrust kettlebell swings. Burns 40 cal/round.", caloriesPer30Min: "40 cal/round" },
+      { name: "Resistance Band Rows", sets: 3, reps: "12 reps (36 total)", target: "Back & Bicep Activation", restSec: 20, howTo: "12 strict resistance band rows. Burns 20 cal/round.", caloriesPer30Min: "20 cal/round" },
+      { name: "Dumbbell Snatches", sets: 3, reps: "8/arm (48 total)", target: "Kinetic Power & Shoulders", restSec: 20, howTo: "8 snatches per arm. Burns 45 cal/round.", caloriesPer30Min: "45 cal/round" },
+      { name: "Weighted Squats", sets: 3, reps: "10 reps (30 total)", target: "Quad & Glute Power", restSec: 90, howTo: "10 deep weighted squats. Burns 30 cal/round. Rest 90 sec after this exercise before starting next round.", caloriesPer30Min: "30 cal/round" }
     ]
   }
 ];
@@ -400,80 +631,15 @@ export const SPORTS_DATA = [
 ];
 
 export const INITIAL_MEALS = {
-  breakfast: [
-    { id: "b1", name: "Eggs (Scrambled)", serving: "2 large", calories: 140, protein: 12, carbs: 1, fat: 9 },
-    { id: "b2", name: "Oats with Water & Chia", serving: "40g raw", calories: 150, protein: 5, carbs: 27, fat: 3 },
-    { id: "b3", name: "Apple", serving: "1 medium", calories: 78, protein: 0.4, carbs: 21, fat: 0.2 }
-  ],
-  lunch: [
-    { id: "l1", name: "Grilled Chicken Breast", serving: "150g", calories: 248, protein: 46.5, carbs: 0, fat: 5.4 },
-    { id: "l2", name: "Steamed White Rice", serving: "150g", calories: 195, protein: 4, carbs: 42, fat: 0.5 },
-    { id: "l3", name: "Steamed Spinach & Dal", serving: "1 cup", calories: 253, protein: 20.8, carbs: 43.4, fat: 1.2 }
-  ],
-  dinner: [
-    { id: "d1", name: "Grilled Salmon Fish", serving: "120g", calories: 218, protein: 30, carbs: 0, fat: 9.7 },
-    { id: "d2", name: "Roasted Vegetables & Dal", serving: "1 bowl", calories: 220, protein: 14, carbs: 32, fat: 2.5 },
-    { id: "d3", name: "Brown Rice", serving: "100g", calories: 130, protein: 2.7, carbs: 28, fat: 0.3 }
-  ],
-  snacks: [
-    { id: "s1", name: "Roasted Almonds", serving: "30g", calories: 173, protein: 6, carbs: 6.1, fat: 15 },
-    { id: "s2", name: "Banana", serving: "1 medium", calories: 105, protein: 1.3, carbs: 27, fat: 0.3 }
-  ]
+  breakfast: [],
+  lunch: [],
+  dinner: [],
+  snacks: []
 };
 
-export const INITIAL_WATER_LOGS = [
-  { id: "w1", time: "08:00 AM", amount: 250 },
-  { id: "w2", time: "10:00 AM", amount: 500 },
-  { id: "w3", time: "12:30 PM", amount: 500 },
-  { id: "w4", time: "03:00 PM", amount: 500 },
-  { id: "w5", time: "05:15 PM", amount: 650 }
-];
+export const INITIAL_WATER_LOGS = [];
 
 export const INITIAL_HISTORY = [
-  {
-    id: "h1",
-    type: "meals",
-    title: "Breakfast",
-    subtitle: "2 Eggs, Oats, Apple",
-    metric: "368 kcal",
-    subMetric: "17.4g Protein",
-    time: "08:00 AM",
-    date: "Today",
-    icon: "apple"
-  },
-  {
-    id: "h2",
-    type: "water",
-    title: "Morning Hydration",
-    subtitle: "Electrolyte infused water",
-    metric: "750 ml",
-    subMetric: "Goal: 3,000 ml",
-    time: "10:00 AM",
-    date: "Today",
-    icon: "droplet"
-  },
-  {
-    id: "h3",
-    type: "meals",
-    title: "Lunch",
-    subtitle: "Grilled Chicken, Rice, Spinach & Dal",
-    metric: "696 kcal",
-    subMetric: "71.3g Protein",
-    time: "01:15 PM",
-    date: "Today",
-    icon: "apple"
-  },
-  {
-    id: "h4",
-    type: "water",
-    title: "Afternoon Hydration",
-    subtitle: "Pure spring water",
-    metric: "1,000 ml",
-    subMetric: "Progress: 1,750 ml",
-    time: "03:00 PM",
-    date: "Today",
-    icon: "droplet"
-  },
   {
     id: "h5",
     type: "workouts",
@@ -482,7 +648,7 @@ export const INITIAL_HISTORY = [
     metric: "220 kcal burned",
     subMetric: "Duration: 30 min • 4 Exercises",
     time: "05:30 PM",
-    date: "Today",
+    date: "Yesterday",
     icon: "dumbbell"
   },
   {
@@ -493,7 +659,7 @@ export const INITIAL_HISTORY = [
     metric: "380 kcal burned",
     subMetric: "Duration: 45 min • Avg 24 km/h",
     time: "07:00 PM",
-    date: "Today",
+    date: "Yesterday",
     icon: "bike"
   },
   {
