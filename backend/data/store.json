@@ -2,8 +2,10 @@
   "user": {
     "id": "user_sahul_hameed",
     "name": "sahul",
-    "phone": "+91 33233020",
+    "phone": "+91 6379048418",
     "avatar": "SA",
+    "gender": "Male",
+    "age": 24,
     "height": 178,
     "currentWeight": 69.5,
     "startingWeight": 72,
@@ -25,14 +27,311 @@
     "fiberGoal": 35
   },
   "meals": {
-    "breakfast": [],
-    "lunch": [],
+    "breakfast": [
+      {
+        "id": "m_ai_1789065800013_469",
+        "name": "Idli",
+        "category": "Breakfast",
+        "grams": 100,
+        "calories": 130,
+        "protein": 4,
+        "carbs": 26,
+        "fat": 0.4,
+        "fiber": 2,
+        "iron": 0.8
+      },
+      {
+        "id": "m_ai_1789065800050_638",
+        "name": "Egg",
+        "category": "Breakfast",
+        "grams": 150,
+        "calories": 216,
+        "protein": 18.9,
+        "carbs": 1.2,
+        "fat": 14.4,
+        "fiber": 2,
+        "iron": 0.8
+      },
+      {
+        "id": "m_ai_1789066523395_931",
+        "name": "Egg",
+        "category": "Breakfast",
+        "grams": 50,
+        "calories": 72,
+        "protein": 6.3,
+        "carbs": 0.4,
+        "fat": 4.8,
+        "fiber": 2,
+        "iron": 0.8
+      },
+      {
+        "id": "m_ai_1789066523418_6",
+        "name": "Oats",
+        "category": "Breakfast",
+        "grams": 150,
+        "calories": 563,
+        "protein": 18.8,
+        "carbs": 101.3,
+        "fat": 9.4,
+        "fiber": 2,
+        "iron": 0.8
+      },
+      {
+        "id": "m_ai_1789066622880_757",
+        "name": "Idli (steamed rice cake)",
+        "category": "Breakfast",
+        "grams": 80,
+        "calories": 120,
+        "protein": 3.2,
+        "carbs": 15,
+        "fat": 2,
+        "fiber": 2,
+        "iron": 0.8
+      },
+      {
+        "id": "m_ai_1789066622928_614",
+        "name": "Whole egg",
+        "category": "Breakfast",
+        "grams": 150,
+        "calories": 215,
+        "protein": 18,
+        "carbs": 15,
+        "fat": 2,
+        "fiber": 2,
+        "iron": 0.8
+      }
+    ],
+    "lunch": [
+      {
+        "id": "m_ai_1789065800111_658",
+        "name": "rice",
+        "category": "Lunch",
+        "grams": 150,
+        "calories": 195,
+        "protein": 4.1,
+        "carbs": 42.3,
+        "fat": 0.5,
+        "fiber": 2,
+        "iron": 0.8
+      },
+      {
+        "id": "m_ai_1789065818940_51",
+        "name": "chicken curry",
+        "category": "Lunch",
+        "grams": 50,
+        "calories": 75,
+        "protein": 8,
+        "carbs": 10,
+        "fat": 3,
+        "fiber": 2,
+        "iron": 0.8
+      },
+      {
+        "id": "m_ai_1789065852599_852",
+        "name": "chicken curry",
+        "category": "Lunch",
+        "grams": 100,
+        "calories": 150,
+        "protein": 15,
+        "carbs": 20,
+        "fat": 5,
+        "fiber": 2,
+        "iron": 0.8
+      },
+      {
+        "id": "m_ai_1789066637397_360",
+        "name": "rice",
+        "category": "Lunch",
+        "grams": 150,
+        "calories": 195,
+        "protein": 4.1,
+        "carbs": 42.3,
+        "fat": 0.5,
+        "fiber": 2,
+        "iron": 0.8
+      }
+    ],
     "dinner": [],
     "snacks": []
   },
-  "waterLogs": [],
-  "workouts": [],
-  "sportsActivities": [],
+  "waterLogs": [
+    {
+      "id": "w_1789065554079",
+      "time": "12:09 AM",
+      "amount": 500
+    },
+    {
+      "id": "w_1789065800160",
+      "time": "12:13 AM",
+      "amount": 750
+    },
+    {
+      "id": "w_1789066642899",
+      "time": "12:27 AM",
+      "amount": 750
+    },
+    {
+      "id": "w_1789067007304",
+      "time": "12:33 AM",
+      "amount": 250
+    }
+  ],
+  "workouts": [
+    {
+      "id": "w_ai_1789063227599",
+      "workoutId": "hw-full-body-beg",
+      "title": "leg",
+      "durationMinutes": 30,
+      "caloriesBurned": 220,
+      "completedAt": "2026-09-10T18:00:27.599Z"
+    },
+    {
+      "id": "w_ai_1789063295701",
+      "workoutId": "hw-full-body-beg",
+      "title": "leg",
+      "durationMinutes": 30,
+      "caloriesBurned": 220,
+      "completedAt": "2026-09-10T18:01:35.701Z"
+    },
+    {
+      "id": "w_ai_1789063329505",
+      "workoutId": "hw-full-body-beg",
+      "title": "leg",
+      "durationMinutes": 30,
+      "caloriesBurned": 220,
+      "completedAt": "2026-09-10T18:02:09.505Z"
+    },
+    {
+      "id": "w_ai_1789064970230",
+      "workoutId": "hw-full-body-beg",
+      "title": "Leg Workout",
+      "durationMinutes": 45,
+      "caloriesBurned": 280,
+      "completedAt": "2026-09-10T18:29:30.230Z"
+    },
+    {
+      "id": "w_ai_1789065000676",
+      "workoutId": "hw-full-body-beg",
+      "title": "Leg Workout",
+      "durationMinutes": 45,
+      "caloriesBurned": 280,
+      "completedAt": "2026-09-10T18:30:00.676Z"
+    },
+    {
+      "id": "w_ai_1789065180872",
+      "workoutId": "hw-full-body-beg",
+      "title": "Leg Workout",
+      "durationMinutes": 45,
+      "caloriesBurned": 280,
+      "completedAt": "2026-09-10T18:33:00.872Z"
+    },
+    {
+      "id": "w_ai_1789065800203",
+      "workoutId": "hw-full-body-beg",
+      "title": "Leg Workout",
+      "durationMinutes": 45,
+      "caloriesBurned": 280,
+      "completedAt": "2026-09-10T18:43:20.203Z"
+    },
+    {
+      "id": "w_ai_1789066655767",
+      "workoutId": "hw-full-body-beg",
+      "title": "Leg Workout",
+      "durationMinutes": 45,
+      "caloriesBurned": 280,
+      "completedAt": "2026-09-10T18:57:35.767Z"
+    },
+    {
+      "id": "w_ai_1789066913892",
+      "workoutId": "hw-full-body-beg",
+      "title": "Leg Workout",
+      "durationMinutes": 45,
+      "caloriesBurned": 280,
+      "completedAt": "2026-09-10T19:01:53.892Z"
+    },
+    {
+      "id": "w_ai_1789067060447",
+      "workoutId": "hw-full-body-beg",
+      "title": "Chest Workout",
+      "durationMinutes": 45,
+      "caloriesBurned": 280,
+      "completedAt": "2026-09-10T19:04:20.447Z"
+    }
+  ],
+  "sportsActivities": [
+    {
+      "id": "sp_ai_1789063227626",
+      "sport": "Football",
+      "durationMinutes": 60,
+      "caloriesBurned": 480,
+      "time": "11:30 PM",
+      "date": "Today"
+    },
+    {
+      "id": "sp_ai_1789063295744",
+      "sport": "Football",
+      "durationMinutes": 60,
+      "caloriesBurned": 480,
+      "time": "11:31 PM",
+      "date": "Today"
+    },
+    {
+      "id": "sp_ai_1789063329603",
+      "sport": "Football",
+      "durationMinutes": 60,
+      "caloriesBurned": 480,
+      "time": "11:32 PM",
+      "date": "Today"
+    },
+    {
+      "id": "sp_ai_1789064970263",
+      "sport": "Football",
+      "durationMinutes": 60,
+      "caloriesBurned": 480,
+      "time": "11:59 PM",
+      "date": "Today"
+    },
+    {
+      "id": "sp_ai_1789065000723",
+      "sport": "Football",
+      "durationMinutes": 60,
+      "caloriesBurned": 480,
+      "time": "12:00 AM",
+      "date": "Today"
+    },
+    {
+      "id": "sp_ai_1789065180967",
+      "sport": "Football",
+      "durationMinutes": 60,
+      "caloriesBurned": 480,
+      "time": "12:03 AM",
+      "date": "Today"
+    },
+    {
+      "id": "sp_ai_1789065800243",
+      "sport": "Football",
+      "durationMinutes": 60,
+      "caloriesBurned": 480,
+      "time": "12:13 AM",
+      "date": "Today"
+    },
+    {
+      "id": "sp_ai_1789066569256",
+      "sport": "Football",
+      "durationMinutes": 90,
+      "caloriesBurned": 720,
+      "time": "12:26 AM",
+      "date": "Today"
+    },
+    {
+      "id": "sp_ai_1789066668670",
+      "sport": "Football",
+      "durationMinutes": 60,
+      "caloriesBurned": 480,
+      "time": "12:27 AM",
+      "date": "Today"
+    }
+  ],
   "reminders": [
     {
       "id": "r1",
@@ -89,7 +388,41 @@
       "active": false
     }
   ],
-  "history": [],
+  "history": [
+    {
+      "id": "h_ai_1789067060447_719",
+      "type": "workouts",
+      "title": "Workout Completed: Chest Workout",
+      "subtitle": "45 min routine • Recorded by AI Coach",
+      "metric": "280 kcal",
+      "subMetric": "Muscles Stimulated",
+      "time": "12:34 AM",
+      "date": "Today",
+      "icon": "dumbbell"
+    },
+    {
+      "id": "h_ai_1789067007305_149",
+      "type": "water",
+      "title": "Hydration Check-in",
+      "subtitle": "Logged +250 ml fluid intake via AI Coach",
+      "metric": "+250 ml",
+      "subMetric": "Total today: 2.25 L",
+      "time": "12:33 AM",
+      "date": "Today",
+      "icon": "droplet"
+    },
+    {
+      "id": "h_ai_1789066913892_32",
+      "type": "workouts",
+      "title": "Workout Completed: Leg Workout",
+      "subtitle": "45 min routine • Recorded by AI Coach",
+      "metric": "280 kcal",
+      "subMetric": "Muscles Stimulated",
+      "time": "12:31 AM",
+      "date": "Today",
+      "icon": "dumbbell"
+    }
+  ],
   "weightHistory": [
     {
       "date": "Week 1",
@@ -120,7 +453,138 @@
     "enabled": true,
     "time": "23:25",
     "time12": "11:25 PM",
-    "lastSentDate": "2026-09-07",
+    "lastSentDate": "2026-09-10",
     "targetChatId": "7032355691"
+  },
+  "aiConversations": [
+    {
+      "id": "conv_1789059872484",
+      "agentResponse": "I'm your FitSport Voice Coach! You can tell me what you had to eat (like \"I had 2 idlis and 2 eggs\"), ask for a workout-sport overlap check (like \"I did legs and want to play football tonight\"), or ask \"How is my progress today?\".",
+      "action": "GENERAL_QUERY",
+      "timestamp": "2026-09-10T17:04:32.484Z"
+    },
+    {
+      "id": "conv_1789059872633",
+      "agentResponse": "I'm your FitSport Voice Coach! You can tell me what you had to eat (like \"I had 2 idlis and 2 eggs\"), ask for a workout-sport overlap check (like \"I did legs and want to play football tonight\"), or ask \"How is my progress today?\".",
+      "action": "GENERAL_QUERY",
+      "timestamp": "2026-09-10T17:04:32.633Z"
+    },
+    {
+      "id": "conv_1789059872656",
+      "agentResponse": "I'm your FitSport Voice Coach! You can tell me what you had to eat (like \"I had 2 idlis and 2 eggs\"), ask for a workout-sport overlap check (like \"I did legs and want to play football tonight\"), or ask \"How is my progress today?\".",
+      "action": "GENERAL_QUERY",
+      "timestamp": "2026-09-10T17:04:32.656Z"
+    },
+    {
+      "id": "conv_1789059872673",
+      "agentResponse": "I'm your FitSport Voice Coach! You can tell me what you had to eat (like \"I had 2 idlis and 2 eggs\"), ask for a workout-sport overlap check (like \"I did legs and want to play football tonight\"), or ask \"How is my progress today?\".",
+      "action": "GENERAL_QUERY",
+      "timestamp": "2026-09-10T17:04:32.673Z"
+    },
+    {
+      "id": "conv_1789060012233",
+      "userMessage": "I had two idlis and two eggs for breakfast",
+      "agentResponse": "Got it! I've recorded 100g of Idli and 100g of Egg for your breakfast (274 kcal, 16.6g protein).",
+      "action": "MEAL_SAVED",
+      "timestamp": "2026-09-10T17:06:52.233Z"
+    },
+    {
+      "id": "conv_1789060012333",
+      "userMessage": "yes please save it",
+      "agentResponse": "Done! Successfully confirmed and logged Apple for your breakfast.",
+      "action": "MEAL_SAVED",
+      "timestamp": "2026-09-10T17:06:52.333Z"
+    },
+    {
+      "id": "conv_1789060012363",
+      "userMessage": "Can I play football after doing a leg workout?",
+      "agentResponse": "You completed a Lower Body / Legs workout and are planning Football. Both activities place substantial concentric and eccentric demands on your Quadriceps, Hamstrings, Calves. Fatigue may increase the physical demands on these muscles. Consider reducing the playing intensity, warming up dynamically, and prioritizing hydration and post-session recovery.",
+      "action": "OVERLAP_ANALYSIS",
+      "timestamp": "2026-09-10T17:06:52.363Z"
+    },
+    {
+      "id": "conv_1789060012381",
+      "userMessage": "How is my nutrition progress today?",
+      "agentResponse": "Keep pushing! You've consumed 352 kcal (18%) with 17g of protein. Your total calories burned today is 0 kcal. Every clean meal and structured habit brings you closer to your athletic goals.",
+      "action": "DAILY_PROGRESS_MOTIVATION",
+      "timestamp": "2026-09-10T17:06:52.381Z"
+    },
+    {
+      "id": "conv_1789060778249",
+      "userMessage": "2 idlis in breakfast",
+      "agentResponse": "Got it! I've recorded 100g of Idli for your breakfast (130 kcal, 4g protein).",
+      "action": "MEAL_SAVED",
+      "timestamp": "2026-09-10T17:19:38.249Z"
+    },
+    {
+      "id": "conv_1789061314289",
+      "userMessage": "i done home workout",
+      "agentResponse": "I'm your FitSport Voice Coach! You can tell me what you had to eat (like \"I had 2 idlis and 2 eggs\"), ask for a workout-sport overlap check (like \"I did legs and want to play football tonight\"), or ask \"How is my progress today?\".",
+      "action": "GENERAL_QUERY",
+      "timestamp": "2026-09-10T17:28:34.289Z"
+    },
+    {
+      "id": "conv_1789061344146",
+      "userMessage": "i workout for leg",
+      "agentResponse": "I'm your FitSport Voice Coach! You can tell me what you had to eat (like \"I had 2 idlis and 2 eggs\"), ask for a workout-sport overlap check (like \"I did legs and want to play football tonight\"), or ask \"How is my progress today?\".",
+      "action": "GENERAL_QUERY",
+      "timestamp": "2026-09-10T17:29:04.146Z"
+    },
+    {
+      "id": "conv_1789061507120",
+      "userMessage": "I had two idlis and two eggs for breakfast",
+      "agentResponse": "Got it! I've recorded 100g of Idli and 100g of Egg for your breakfast (274 kcal, 16.6g protein).",
+      "action": "MEAL_SAVED",
+      "timestamp": "2026-09-10T17:31:47.120Z"
+    },
+    {
+      "id": "conv_1789061507333",
+      "userMessage": "I drank 500ml water",
+      "agentResponse": "Hydration logged! Added 500ml of water to your common history. Total intake today: 0.50L.",
+      "action": "WATER_SAVED",
+      "timestamp": "2026-09-10T17:31:47.333Z"
+    },
+    {
+      "id": "conv_1789061796003",
+      "userMessage": "Can I play football after doing a leg workout?",
+      "agentResponse": "You completed a Lower Body / Legs workout and are planning Football. Both activities place substantial concentric and eccentric demands on your Quadriceps, Hamstrings, Calves. Fatigue may increase the physical demands on these muscles. Consider reducing the playing intensity, warming up dynamically, and prioritizing hydration and post-session recovery.",
+      "action": "OVERLAP_ANALYSIS",
+      "timestamp": "2026-09-10T17:36:36.003Z"
+    }
+  ],
+  "aiCheckInSettings": {
+    "enabled": true,
+    "voiceEnabled": false,
+    "checkIns": {
+      "breakfast": {
+        "enabled": true,
+        "time": "08:30 AM"
+      },
+      "lunch": {
+        "enabled": true,
+        "time": "01:00 PM"
+      },
+      "snack": {
+        "enabled": true,
+        "time": "05:00 PM"
+      },
+      "dinner": {
+        "enabled": true,
+        "time": "08:30 PM"
+      }
+    },
+    "workoutFollowUp": true,
+    "sportRecoveryCheck": true,
+    "dailyProgressReview": {
+      "enabled": true,
+      "time": "09:00 PM"
+    },
+    "preferredVoice": "default",
+    "mealCheckIns": {
+      "breakfast": {
+        "enabled": true,
+        "time": "07:45"
+      }
+    }
   }
 }

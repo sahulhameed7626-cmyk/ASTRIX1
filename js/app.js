@@ -8,6 +8,7 @@ import {
   renderWeeklyCaloriesChart,
   renderWeightJourneyChart
 } from "./charts.js";
+import { aiCoach } from "./aiCoach.js";
 
 // Web Audio API Ringtone Synthesizer for Precision Athletic Alarms
 class AlarmAudioEngine {
@@ -133,9 +134,6 @@ class FitSportApp {
   }
 
   async init() {
-    // Reset all workouts, nutrition, and water intake on each web load to 0 clean slate
-    appState.resetDailyTrackers(true);
-
     this.bindNavigation();
     this.bindHeaderActions();
     this.bindOnboarding();
@@ -151,6 +149,9 @@ class FitSportApp {
     this.bindProfileAndSettings();
     this.bindWeightControls();
     this.bindAutoResetModal();
+    if (typeof aiCoach !== "undefined" && aiCoach.bindUIEvents) {
+      aiCoach.bindUIEvents();
+    }
     this.startAlarmClockWatcher();
     this.startAutoResetWatcher();
 
@@ -173,22 +174,24 @@ class FitSportApp {
     const requestedView = urlParams.get("view") || hashView;
 
     const isAuthed = appState.isSessionLoggedIn();
-    const publicScreens = ["login", "landing", "onboarding", "logout"];
+    const publicScreens = ["login", "onboarding", "logout"];
 
-    if (requestedView) {
+    if (requestedView === "landing") {
+      this.navigateTo(isAuthed ? "dashboard" : "login");
+    } else if (requestedView) {
       if (publicScreens.includes(requestedView)) {
         this.navigateTo(requestedView);
       } else if (isAuthed) {
         this.navigateTo(requestedView);
       } else {
-        this.showToast("Please setup your profile or sign in to access FitSport.");
-        this.navigateTo("onboarding");
+        this.showToast("Please sign in to access FitSport.");
+        this.navigateTo("login");
       }
     } else if (isAuthed) {
       this.navigateTo("dashboard");
     } else {
-      // Begin from Setup New Profile each time opening
-      this.navigateTo("onboarding");
+      // Landing page removed -> Go directly to Login
+      this.navigateTo("login");
     }
 
     window.addEventListener("hashchange", () => {
@@ -215,10 +218,14 @@ class FitSportApp {
   // Navigation & View Routing
   // --------------------------------------------------------------------------
   navigateTo(viewId) {
-    const publicScreens = ["login", "landing", "onboarding", "logout"];
+    if (viewId === "landing") {
+      viewId = appState.isSessionLoggedIn() ? "dashboard" : "login";
+    }
+
+    const publicScreens = ["login", "onboarding", "logout"];
     if (!publicScreens.includes(viewId) && !appState.isSessionLoggedIn()) {
-      this.showToast("Please setup your profile or sign in to access FitSport.");
-      viewId = "onboarding";
+      this.showToast("Please sign in to access FitSport.");
+      viewId = "login";
     }
 
     if (viewId === "logout") {
@@ -253,18 +260,6 @@ class FitSportApp {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
-    // Dynamic Landing Toggle button in header
-    const landingToggleBtn = document.getElementById("landingToggleBtn");
-    if (landingToggleBtn) {
-      if (viewId === "landing") {
-        landingToggleBtn.textContent = "Open Dashboard →";
-        landingToggleBtn.setAttribute("data-view", "dashboard");
-      } else {
-        landingToggleBtn.textContent = "Landing Page";
-        landingToggleBtn.setAttribute("data-view", "landing");
-      }
-    }
-
     // Update active nav links
     document.querySelectorAll(".nav-link, .bottom-nav-item").forEach(link => {
       const target = link.getAttribute("data-view");
@@ -288,7 +283,7 @@ class FitSportApp {
       const sportId = appState.state.selectedSportId || "cycling";
       const detailMapContainer = document.getElementById("sDetailBodyMapContainer");
       if (detailMapContainer) {
-        renderBodyMap(detailMapContainer, sportId, "front");
+        renderBodyMap(detailMapContainer, sportId, "both");
       }
     }
     if (viewId === "profile") {
@@ -302,14 +297,27 @@ class FitSportApp {
       this.populateOnboardingForm();
     }
     if (viewId === "login") {
+      const user = appState.state.user || {};
       const loginExistingName = document.getElementById("loginExistingName");
-      if (loginExistingName) loginExistingName.value = "";
+      if (loginExistingName) loginExistingName.value = user.name || "";
       const loginExistingPhone = document.getElementById("loginExistingPhone");
-      if (loginExistingPhone) loginExistingPhone.value = "";
+      if (loginExistingPhone) {
+        const cleanPhone = (user.phone || "").replace(/^\+91\s*/, "");
+        loginExistingPhone.value = cleanPhone;
+      }
+      const loginGender = document.getElementById("loginGender");
+      if (loginGender) loginGender.value = user.gender || "Male";
+      const loginAge = document.getElementById("loginAge");
+      if (loginAge) loginAge.value = user.age || 24;
+
       const regName = document.getElementById("regName");
       if (regName) regName.value = "";
       const regPhone = document.getElementById("regPhone");
       if (regPhone) regPhone.value = "";
+      const regGender = document.getElementById("regGender");
+      if (regGender) regGender.value = user.gender || "Male";
+      const regAge = document.getElementById("regAge");
+      if (regAge) regAge.value = user.age || 24;
     }
     if (viewId === "analytics") {
       this.renderAnalyticsCharts();
@@ -397,7 +405,7 @@ class FitSportApp {
 
     document.getElementById("sidebarBrandClick")?.addEventListener("click", () => {
       closeMobileMenu();
-      this.navigateTo("landing");
+      this.navigateTo(appState.isSessionLoggedIn() ? "dashboard" : "login");
     });
 
     document.querySelectorAll(".nav-link").forEach(link => {
@@ -456,15 +464,6 @@ class FitSportApp {
   }
 
   bindHeaderActions() {
-    const toggleLanding = () => {
-      if (this.currentView === "landing") {
-        this.navigateTo("dashboard");
-      } else {
-        this.navigateTo("landing");
-      }
-    };
-    document.getElementById("landingToggleBtn")?.addEventListener("click", toggleLanding);
-
     document.getElementById("headerDailySummaryBtn")?.addEventListener("click", () => {
       this.navigateTo("daily-summary");
     });
@@ -475,16 +474,6 @@ class FitSportApp {
 
     document.getElementById("headerLogoutBtn")?.addEventListener("click", () => {
       this.navigateTo("logout");
-    });
-
-    document.getElementById("landingCtaStart")?.addEventListener("click", () => {
-      this.navigateTo("onboarding");
-    });
-    document.getElementById("landingCtaExplore")?.addEventListener("click", () => {
-      this.navigateTo("dashboard");
-    });
-    document.getElementById("landingCtaLogin")?.addEventListener("click", () => {
-      this.navigateTo("login");
     });
 
     // Auth Mode Toggles (Sign In vs Create Account)
@@ -537,10 +526,14 @@ class FitSportApp {
       const currentUser = appState.state.user || {};
       const finalName = name || currentUser.name || "Athlete";
       const finalPhone = phone || currentUser.phone || "+91 99999 88888";
+      const gender = document.getElementById("loginGender")?.value || currentUser.gender || "Male";
+      const age = parseInt(document.getElementById("loginAge")?.value, 10) || currentUser.age || 24;
 
       await appState.updateUserProfile({
         name: finalName,
-        phone: finalPhone
+        phone: finalPhone,
+        gender,
+        age
       });
 
       appState.setLoggedIn(true);
@@ -566,6 +559,8 @@ class FitSportApp {
       }
 
       const phone = rawPhone.startsWith("+") ? rawPhone : `+91 ${rawPhone}`;
+      const gender = document.getElementById("regGender")?.value || "Male";
+      const age = parseInt(document.getElementById("regAge")?.value, 10) || 24;
       const height = parseFloat(document.getElementById("regHeight")?.value) || 178;
       const currentWeight = parseFloat(document.getElementById("regCurrentWeight")?.value) || 69.5;
       const targetWeight = parseFloat(document.getElementById("regTargetWeight")?.value) || 65.0;
@@ -575,6 +570,8 @@ class FitSportApp {
       await appState.updateUserProfile({
         name,
         phone,
+        gender,
+        age,
         height,
         currentWeight,
         startingWeight: currentWeight,
@@ -597,14 +594,8 @@ class FitSportApp {
     document.getElementById("loginToOnboardingBtn")?.addEventListener("click", () => {
       this.navigateTo("onboarding");
     });
-    document.getElementById("loginToLandingBtn")?.addEventListener("click", () => {
-      this.navigateTo("landing");
-    });
     document.getElementById("logoutToLoginBtn")?.addEventListener("click", () => {
       this.navigateTo("login");
-    });
-    document.getElementById("logoutToLandingBtn")?.addEventListener("click", () => {
-      this.navigateTo("landing");
     });
   }
 
@@ -718,10 +709,6 @@ class FitSportApp {
 
     document.getElementById("onboardingToLoginBtn")?.addEventListener("click", () => {
       this.navigateTo("login");
-    });
-
-    document.getElementById("onboardingToLandingBtn")?.addEventListener("click", () => {
-      this.navigateTo("landing");
     });
   }
 
@@ -1484,88 +1471,281 @@ class FitSportApp {
     });
   }
 
+  getMiniMuscleSvg(targetMuscles = []) {
+    const list = Array.isArray(targetMuscles) ? targetMuscles.map(s => String(s).toLowerCase()) : [];
+    const isFull = list.some(m => m.includes("full"));
+    const isChest = isFull || list.some(m => m.includes("chest") || m.includes("push") || m.includes("upper"));
+    const isArms = isFull || list.some(m => m.includes("arm") || m.includes("bicep") || m.includes("tricep") || m.includes("upper") || m.includes("grip"));
+    const isShoulders = isFull || list.some(m => m.includes("shoulder") || m.includes("deltoid") || m.includes("upper"));
+    const isCore = isFull || list.some(m => m.includes("core") || m.includes("abs") || m.includes("plank") || m.includes("oblique"));
+    const isLegs = isFull || list.some(m => m.includes("leg") || m.includes("squat") || m.includes("lunge") || m.includes("quad") || m.includes("glute") || m.includes("hiit") || m.includes("calf"));
+
+    const off = "#27302b";
+    const on = "#22c55e";
+
+    return `
+      <svg width="28" height="48" viewBox="0 0 32 56" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block; filter: drop-shadow(0 0 3px rgba(34,197,94,0.35));">
+        <!-- Head -->
+        <circle cx="16" cy="5" r="3.6" fill="${off}" />
+        <!-- Neck -->
+        <rect x="14.6" y="8.8" width="2.8" height="2" rx="0.5" fill="${off}" />
+        <!-- Traps & Shoulders -->
+        <path d="M8 12.2C10.5 11 13.5 11 16 11C18.5 11 21.5 11 24 12.2L26 15.5C26 15.5 22.8 15 16 15C9.2 15 6 15.5 6 15.5L8 12.2Z" fill="${isShoulders ? on : off}" />
+        <!-- Chest -->
+        <path d="M9.5 15.5C12 15.2 15.8 15.2 16 15.2C16.2 15.2 20 15.2 22.5 15.5C23.2 17.5 22.5 20.2 21.8 21C20 21.5 16 21.5 16 21.5C16 21.5 12 21.5 10.2 21C9.5 20.2 8.8 17.5 9.5 15.5Z" fill="${isChest ? on : off}" />
+        <!-- Upper Arms -->
+        <path d="M5.5 16.2L3.8 23.5C3.5 25 4.2 27 5.2 28.5L6.4 28.5C6 26.5 5.8 24 7.2 21.5L7.5 16.2Z" fill="${isArms ? on : off}" />
+        <path d="M26.5 16.2L28.2 23.5C28.5 25 27.8 27 26.8 28.5L25.6 28.5C26 26.5 26.2 24 24.8 21.5L24.5 16.2Z" fill="${isArms ? on : off}" />
+        <!-- Forearms -->
+        <path d="M4 29L3 36C2.8 37 3.5 38 4.2 38L5 38C5.2 36.5 5.5 33 6.2 29Z" fill="${isArms ? on : off}" />
+        <path d="M28 29L29 36C29.2 37 28.5 38 27.8 38L27 38C26.8 36.5 26.5 33 25.8 29Z" fill="${isArms ? on : off}" />
+        <!-- Core / Abs -->
+        <rect x="12" y="22.2" width="8" height="7.2" rx="1.2" fill="${isCore ? on : off}" />
+        <!-- Pelvis -->
+        <path d="M11.5 29.8H20.5L19.2 33.8H12.8L11.5 29.8Z" fill="${off}" />
+        <!-- Thighs / Quads -->
+        <path d="M11.2 34.2L9.5 43C9.2 44.5 9.5 46 9.2 50H12.2L13.8 43L14.8 34.2H11.2Z" fill="${isLegs ? on : off}" />
+        <path d="M20.8 34.2L22.5 43C22.8 44.5 22.5 46 22.8 50H19.8L18.2 43L17.2 34.2H20.8Z" fill="${isLegs ? on : off}" />
+        <!-- Calves -->
+        <path d="M9.2 50.5L8.5 54.5H12L12.2 50.5H9.2Z" fill="${isLegs ? on : off}" />
+        <path d="M22.8 50.5L23.5 54.5H20L19.8 50.5H22.8Z" fill="${isLegs ? on : off}" />
+      </svg>
+    `;
+  }
+
+  updateWorkoutShowcase(workout) {
+    if (!workout) return;
+    this.selectedShowcaseWorkout = workout;
+
+    const heroImg = document.getElementById("scHeroImg");
+    const heroTitle = document.getElementById("scHeroTitle");
+    const heroDuration = document.getElementById("scHeroDuration");
+    const heroCalories = document.getElementById("scHeroCalories");
+    const heroLevel = document.getElementById("scHeroLevel");
+    const heroDesc = document.getElementById("scHeroDesc");
+    const exList = document.getElementById("scExerciseList");
+    const startBtn = document.getElementById("scStartWorkoutBtn");
+    const musclesPctList = document.getElementById("scMusclesPctList");
+    const proTipText = document.getElementById("scProTipText");
+
+    if (heroImg) heroImg.src = workout.heroImage || workout.image || "images/workouts/hero_full_body_beg.jpg";
+    if (heroTitle) heroTitle.textContent = workout.title;
+    if (heroDuration) heroDuration.textContent = `${workout.duration} min`;
+    if (heroCalories) heroCalories.textContent = `${workout.calories} kcal`;
+    if (heroLevel) {
+      heroLevel.textContent = workout.level || "Beginner";
+      heroLevel.className = workout.level === "Advanced" ? "badge-level-advanced" : "badge-level-beginner";
+    }
+    if (heroDesc) heroDesc.textContent = workout.description;
+
+    // Exercises middle column
+    if (exList && Array.isArray(workout.exercises)) {
+      exList.innerHTML = workout.exercises.map((ex, idx) => `
+        <div class="showcase-exercise-item" data-ex-idx="${idx}">
+          <div class="showcase-ex-left">
+            <span class="showcase-ex-num">${idx + 1}</span>
+            <img src="${ex.thumb || 'images/workouts/thumb_squat.jpg'}" alt="${ex.name}" class="showcase-ex-thumb" onerror="this.src='images/workouts/thumb_squat.jpg'" />
+            <div class="showcase-ex-info">
+              <h4>${ex.name}</h4>
+              <span>${ex.reps || (ex.sets ? `${ex.sets} × 10` : '3 × 10')}</span>
+            </div>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      `).join('');
+
+      // Click on exercise opens details
+      exList.querySelectorAll(".showcase-exercise-item").forEach(item => {
+        item.addEventListener("click", () => {
+          this.openWorkoutDetails(workout.id);
+        });
+      });
+    }
+
+    // Start workout button
+    if (startBtn) {
+      startBtn.onclick = () => {
+        appState.state.selectedWorkoutId = workout.id;
+        this.startActiveWorkout(workout.id);
+      };
+    }
+
+    // Muscles worked list
+    if (musclesPctList) {
+      const breakdown = workout.musclesWorked || [
+        { name: "Full Body", pct: 100 },
+        { name: "Core", pct: 70 },
+        { name: "Legs", pct: 65 },
+        { name: "Arms", pct: 50 },
+        { name: "Shoulders", pct: 45 }
+      ];
+      musclesPctList.innerHTML = breakdown.map(m => `
+        <div class="showcase-muscles-pct-item">
+          <span class="muscle-name"><span class="muscle-dot"></span>${m.name}</span>
+          <span class="muscle-pct">${m.pct}%</span>
+        </div>
+      `).join('');
+    }
+
+    // Pro tip
+    if (proTipText) {
+      proTipText.textContent = workout.proTip || "Keep your core tight and maintain good form throughout the workout for better results and reduced injury risk.";
+    }
+
+    // Highlight selected card visually
+    document.querySelectorAll(".workout-photo-card").forEach(c => {
+      if (c.getAttribute("data-id") === workout.id) {
+        c.classList.add("selected");
+      } else {
+        c.classList.remove("selected");
+      }
+    });
+  }
+
   renderWorkoutsCategories() {
     const homeMount = document.getElementById("homeWorkoutsGrid");
     const equipMount = document.getElementById("equipmentWorkoutsGrid");
     const circuitsMount = document.getElementById("circuitsWorkoutsGrid");
     if (!homeMount || !equipMount) return;
 
+    // Featured image workouts (matching reference UI)
+    const homeFeatured = WORKOUT_CATEGORIES.filter(w => w.category === "Home Workouts" && w.image);
+    const equipFeatured = WORKOUT_CATEGORIES.filter(w => w.category === "Equipment Workouts" && w.image);
     const circuitsList = WORKOUT_CATEGORIES.filter(w => w.subCategory === "30-Min Circuit");
-    const homeList = WORKOUT_CATEGORIES.filter(w => w.category === "Home Workouts" && w.subCategory !== "30-Min Circuit");
-    const equipList = WORKOUT_CATEGORIES.filter(w => w.category === "Equipment Workouts");
 
-    const renderCard = (w) => `
+    // Initialize active selected workout to first one (Full Body Beginner) if not set
+    if (!this.selectedShowcaseWorkout) {
+      this.selectedShowcaseWorkout = homeFeatured[0] || WORKOUT_CATEGORIES[0];
+    }
+
+    const renderPhotoCard = (w) => `
+      <div class="workout-photo-card ${(this.selectedShowcaseWorkout && this.selectedShowcaseWorkout.id === w.id) ? 'selected' : ''}" data-id="${w.id}">
+        <div class="workout-card-img-wrap">
+          <img src="${w.image || 'images/workouts/workout_pushups_hd.jpg'}" alt="${w.title}" loading="lazy" onerror="this.src='images/workouts/workout_pushups_hd.jpg'" />
+          <div class="workout-card-overlay"></div>
+        </div>
+        <div class="workout-card-body">
+          <div class="workout-card-title">${w.title}</div>
+          <div class="workout-card-footer-row">
+            <div class="workout-card-stats">
+              <div class="workout-meta-inline">
+                <span>⏱ ${w.duration} min</span>
+                <span>🔥 ${w.calories} kcal</span>
+              </div>
+              <div style="margin-top: 4px;">
+                <span class="${w.level === 'Advanced' ? 'badge-level-advanced' : 'badge-level-beginner'}">${w.level || 'Beginner'}</span>
+              </div>
+            </div>
+            <div class="workout-mini-figure">
+              ${this.getMiniMuscleSvg(w.targetMuscles || [])}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const renderCircuitCard = (w) => `
       <div class="workout-card" data-id="${w.id}">
         <div>
           <div class="workout-badge-row">
-            <span class="badge-tag">${w.subCategory}</span>
+            <span class="badge-tag">${w.subCategory || 'Circuit'}</span>
             <span style="font-family: var(--font-display); font-weight: 700; color: var(--green-primary);">${w.calories} kcal</span>
           </div>
-          <h3 style="font-size: 1.25rem; margin: 12px 0 6px 0;">${w.title}</h3>
+          <h3 style="font-size: 1.15rem; margin: 10px 0 6px 0;">${w.title}</h3>
           <p style="font-size: 0.85rem; line-height: 1.4;">${w.description}</p>
         </div>
         <div>
-          <div class="workout-meta-chips" style="margin-bottom: 16px;">
+          <div class="workout-meta-chips" style="margin-bottom: 12px;">
             <span class="meta-chip">⏱️ ${w.duration} min</span>
             <span class="meta-chip">⚡ ${w.intensity}</span>
             <span class="meta-chip">📋 ${w.exercisesCount} Exercises</span>
-            ${w.equipmentNeeded ? `<span class="meta-chip">🏋️ ${w.equipmentNeeded}</span>` : ''}
           </div>
           <button type="button" class="btn btn-secondary btn-sm" style="width: 100%;">View Routine & Start →</button>
         </div>
       </div>
     `;
 
-    if (circuitsMount) {
-      circuitsMount.innerHTML = circuitsList.map(renderCard).join('');
-    }
-    homeMount.innerHTML = homeList.map(renderCard).join('');
-    equipMount.innerHTML = equipList.map(renderCard).join('');
+    const filterCards = (list, levelFilter) => {
+      if (!levelFilter || levelFilter === 'all') return list;
+      return list.filter(w => (w.level || '').toLowerCase() === levelFilter.toLowerCase());
+    };
 
-    // Setup filter tabs once
-    if (!this._workoutFilterBound) {
-      this._workoutFilterBound = true;
-      document.querySelectorAll(".workout-filter-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-          document.querySelectorAll(".workout-filter-btn").forEach(b => {
-            b.classList.remove("btn-primary", "active");
-            b.classList.add("btn-secondary");
-          });
-          btn.classList.remove("btn-secondary");
-          btn.classList.add("btn-primary", "active");
-
-          const filter = btn.getAttribute("data-filter");
-          const cSec = document.getElementById("circuitsSectionWrapper");
-          const hSec = document.getElementById("homeSectionWrapper");
-          const eSec = document.getElementById("equipmentSectionWrapper");
-
-          if (filter === "all") {
-            if (cSec) cSec.style.display = "block";
-            if (hSec) hSec.style.display = "block";
-            if (eSec) eSec.style.display = "block";
-          } else if (filter === "circuits") {
-            if (cSec) cSec.style.display = "block";
-            if (hSec) hSec.style.display = "none";
-            if (eSec) eSec.style.display = "none";
-          } else if (filter === "no-equipment") {
-            if (cSec) cSec.style.display = "none";
-            if (hSec) hSec.style.display = "block";
-            if (eSec) eSec.style.display = "none";
-          } else if (filter === "equipment") {
-            if (cSec) cSec.style.display = "none";
-            if (hSec) hSec.style.display = "none";
-            if (eSec) eSec.style.display = "block";
+    const bindCardClicks = () => {
+      document.querySelectorAll(".workout-photo-card").forEach(card => {
+        card.addEventListener("click", () => {
+          const id = card.getAttribute("data-id");
+          const w = WORKOUT_CATEGORIES.find(x => x.id === id);
+          if (w) {
+            this.updateWorkoutShowcase(w);
           }
         });
       });
+
+      document.querySelectorAll(".workout-card").forEach(card => {
+        card.addEventListener("click", () => {
+          const id = card.getAttribute("data-id");
+          this.openWorkoutDetails(id);
+        });
+      });
+    };
+
+    const updateHomeGrid = () => {
+      const list = filterCards(homeFeatured, this._homeFilterLevel);
+      homeMount.innerHTML = list.map(renderPhotoCard).join('');
+      bindCardClicks();
+    };
+
+    const updateEquipGrid = () => {
+      const list = filterCards(equipFeatured, this._equipFilterLevel);
+      equipMount.innerHTML = list.map(renderPhotoCard).join('');
+      bindCardClicks();
+    };
+
+    // Render cards initially
+    updateHomeGrid();
+    updateEquipGrid();
+    if (circuitsMount) {
+      circuitsMount.innerHTML = circuitsList.map(renderCircuitCard).join('');
+      bindCardClicks();
     }
 
-    document.querySelectorAll(".workout-card").forEach(card => {
-      card.addEventListener("click", () => {
-        const id = card.getAttribute("data-id");
-        this.openWorkoutDetails(id);
+    // Populate bottom showcase panel
+    this.updateWorkoutShowcase(this.selectedShowcaseWorkout);
+
+    // Setup pill filters
+    if (!this._workoutPillsBound) {
+      this._workoutPillsBound = true;
+
+      document.querySelectorAll("#homePillsGroup .workout-pill-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const level = btn.getAttribute("data-level");
+          if (this._homeFilterLevel === level) {
+            this._homeFilterLevel = null;
+            btn.classList.remove("active");
+          } else {
+            document.querySelectorAll("#homePillsGroup .workout-pill-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            this._homeFilterLevel = level;
+          }
+          updateHomeGrid();
+        });
       });
-    });
+
+      document.querySelectorAll("#equipPillsGroup .workout-pill-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const level = btn.getAttribute("data-level");
+          if (this._equipFilterLevel === level) {
+            this._equipFilterLevel = null;
+            btn.classList.remove("active");
+          } else {
+            document.querySelectorAll("#equipPillsGroup .workout-pill-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            this._equipFilterLevel = level;
+          }
+          updateEquipGrid();
+        });
+      });
+    }
   }
 
   openWorkoutDetails(workoutId) {
@@ -1676,6 +1856,10 @@ class FitSportApp {
     document.getElementById("wCompletedCalories").textContent = `${workout.calories} kcal`;
     document.getElementById("wCompletedDuration").textContent = `${durationActual} minutes`;
 
+    if (typeof aiCoach !== "undefined" && aiCoach.triggerPostWorkoutCheck) {
+      aiCoach.triggerPostWorkoutCheck(workout.title || workout.name || "Workout");
+    }
+
     const modal = document.getElementById("workoutCompletedModal");
     if (modal) modal.classList.add("open");
   }
@@ -1784,7 +1968,11 @@ class FitSportApp {
     // Render interactive Anatomical Load Map for the selected sport directly in details
     const detailMapContainer = document.getElementById("sDetailBodyMapContainer");
     if (detailMapContainer) {
-      renderBodyMap(detailMapContainer, sportId, "front");
+      renderBodyMap(detailMapContainer, sportId, "both");
+    }
+
+    if (typeof aiCoach !== "undefined" && aiCoach.triggerPreSportCheck) {
+      aiCoach.triggerPreSportCheck(sportId);
     }
 
     this.navigateTo("sport-details");
@@ -1816,7 +2004,7 @@ class FitSportApp {
     const sport = SPORTS_DATA.find(s => s.id === sportId) || SPORTS_DATA[0];
 
     if (container) {
-      renderBodyMap(container, sportId, "front");
+      renderBodyMap(container, sportId, "both");
     }
 
     const selector = document.getElementById("bodySportSelector");
@@ -2887,6 +3075,12 @@ class FitSportApp {
     const phoneInput = document.getElementById("editProfPhone");
     if (phoneInput) phoneInput.value = user.phone || "+91 99999 88888";
 
+    const genderSelect = document.getElementById("editProfGender");
+    if (genderSelect) genderSelect.value = user.gender || "Male";
+
+    const ageInput = document.getElementById("editProfAge");
+    if (ageInput) ageInput.value = user.age || 24;
+
     const heightInput = document.getElementById("editProfHeight");
     if (heightInput) heightInput.value = user.height || 178;
 
@@ -2951,6 +3145,8 @@ class FitSportApp {
     document.getElementById("saveEditProfileModalBtn")?.addEventListener("click", async () => {
       const name = (document.getElementById("editProfName")?.value || "").trim() || appState.state.user.name || "Sahul Hameed";
       const phone = (document.getElementById("editProfPhone")?.value || "").trim() || appState.state.user.phone || "+91 99999 88888";
+      const gender = document.getElementById("editProfGender")?.value || appState.state.user.gender || "Male";
+      const age = parseInt(document.getElementById("editProfAge")?.value, 10) || appState.state.user.age || 24;
       const height = parseFloat(document.getElementById("editProfHeight")?.value) || 178;
       const currentWeight = parseFloat(document.getElementById("editProfCurrentWeight")?.value) || 69.5;
       const targetWeight = parseFloat(document.getElementById("editProfTargetWeight")?.value) || 65.0;
@@ -2959,6 +3155,8 @@ class FitSportApp {
       await appState.updateUserProfile({
         name,
         phone,
+        gender,
+        age,
         height,
         currentWeight,
         targetWeight,
@@ -3014,6 +3212,96 @@ class FitSportApp {
 
     document.getElementById("logoutBtn")?.addEventListener("click", () => {
       this.navigateTo("logout");
+    });
+
+    // AI Coach Settings Synchronization & Persistence
+    const populateAiSettingsForm = async () => {
+      try {
+        const res = await fetch("/api/ai/settings");
+        if (res.ok) {
+          const s = await res.json();
+          const masterToggle = document.getElementById("aiSettingMasterToggle");
+          const voiceToggle = document.getElementById("aiSettingVoiceToggle");
+          const workoutToggle = document.getElementById("aiSettingWorkoutToggle");
+          const sportToggle = document.getElementById("aiSettingSportToggle");
+          const bCheck = document.getElementById("aiCheckInBreakfastToggle");
+          const bTime = document.getElementById("aiCheckInBreakfastTime");
+          const lCheck = document.getElementById("aiCheckInLunchToggle");
+          const lTime = document.getElementById("aiCheckInLunchTime");
+          const sCheck = document.getElementById("aiCheckInSnackToggle");
+          const sTime = document.getElementById("aiCheckInSnackTime");
+          const dCheck = document.getElementById("aiCheckInDinnerToggle");
+          const dTime = document.getElementById("aiCheckInDinnerTime");
+          const rCheck = document.getElementById("aiCheckInDailyReviewToggle");
+
+          if (masterToggle) masterToggle.checked = s.enabled !== false;
+          if (voiceToggle) voiceToggle.checked = s.voiceEnabled !== false;
+          if (workoutToggle) workoutToggle.checked = s.postWorkoutCheckIn !== false;
+          if (sportToggle) sportToggle.checked = s.preSportCheckIn !== false;
+
+          if (s.mealCheckIns) {
+            if (bCheck) bCheck.checked = !!s.mealCheckIns.breakfast?.enabled;
+            if (bTime) bTime.value = s.mealCheckIns.breakfast?.time || "08:30";
+            if (lCheck) lCheck.checked = !!s.mealCheckIns.lunch?.enabled;
+            if (lTime) lTime.value = s.mealCheckIns.lunch?.time || "13:00";
+            if (sCheck) sCheck.checked = !!s.mealCheckIns.snack?.enabled;
+            if (sTime) sTime.value = s.mealCheckIns.snack?.time || "17:00";
+            if (dCheck) dCheck.checked = !!s.mealCheckIns.dinner?.enabled;
+            if (dTime) dTime.value = s.mealCheckIns.dinner?.time || "20:30";
+          }
+          if (rCheck) rCheck.checked = s.dailyReview?.enabled !== false;
+        }
+      } catch (err) {
+        console.warn("Failed to load AI settings:", err);
+      }
+    };
+    populateAiSettingsForm();
+
+    document.getElementById("saveAiCoachSettingsBtn")?.addEventListener("click", async () => {
+      const payload = {
+        enabled: document.getElementById("aiSettingMasterToggle")?.checked ?? true,
+        voiceEnabled: document.getElementById("aiSettingVoiceToggle")?.checked ?? true,
+        postWorkoutCheckIn: document.getElementById("aiSettingWorkoutToggle")?.checked ?? true,
+        preSportCheckIn: document.getElementById("aiSettingSportToggle")?.checked ?? true,
+        mealCheckIns: {
+          breakfast: {
+            enabled: document.getElementById("aiCheckInBreakfastToggle")?.checked ?? true,
+            time: document.getElementById("aiCheckInBreakfastTime")?.value || "08:30"
+          },
+          lunch: {
+            enabled: document.getElementById("aiCheckInLunchToggle")?.checked ?? true,
+            time: document.getElementById("aiCheckInLunchTime")?.value || "13:00"
+          },
+          snack: {
+            enabled: document.getElementById("aiCheckInSnackToggle")?.checked ?? true,
+            time: document.getElementById("aiCheckInSnackTime")?.value || "17:00"
+          },
+          dinner: {
+            enabled: document.getElementById("aiCheckInDinnerToggle")?.checked ?? true,
+            time: document.getElementById("aiCheckInDinnerTime")?.value || "20:30"
+          }
+        },
+        dailyReview: {
+          enabled: document.getElementById("aiCheckInDailyReviewToggle")?.checked ?? true,
+          time: "21:00"
+        }
+      };
+
+      try {
+        const res = await fetch("/api/ai/settings", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          if (typeof aiCoach !== "undefined") aiCoach.settings = payload;
+          this.showToast("✅ AI Voice Coach settings saved successfully!");
+        } else {
+          this.showToast("Failed to save AI Coach settings");
+        }
+      } catch (e) {
+        this.showToast("Error updating AI Coach settings");
+      }
     });
   }
 
@@ -3234,6 +3522,12 @@ class FitSportApp {
 
     const profGoalBadge = document.getElementById("profileGoalBadge");
     if (profGoalBadge) profGoalBadge.textContent = user.fitnessGoal || "Improve Sports Performance";
+
+    const profGender = document.getElementById("profGender");
+    if (profGender) profGender.textContent = user.gender || "Male";
+
+    const profAge = document.getElementById("profAge");
+    if (profAge) profAge.textContent = `${user.age || 24} yrs`;
 
     const profHeight = document.getElementById("profHeight");
     if (profHeight) profHeight.textContent = `${user.height || 178} cm`;

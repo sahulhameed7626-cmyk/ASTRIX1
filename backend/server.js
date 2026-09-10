@@ -15,6 +15,10 @@ import { handleSummaryRoutes } from './routes/summary.js';
 import { handleUserRoutes } from './routes/user.js';
 import { handleResetRoutes } from './routes/reset.js';
 import { handleTelegramRoutes } from './routes/telegram.js';
+import { handleAiCoachRoutes } from './routes/aiCoach.js';
+import { validateEnvironment } from './ai/utils/envValidator.js';
+
+validateEnvironment();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -80,6 +84,7 @@ const server = http.createServer((req, res) => {
       if (handleUserRoutes(req, res, parsedUrl, body)) return;
       if (handleResetRoutes(req, res, parsedUrl, body)) return;
       if (await handleTelegramRoutes(req, res, parsedUrl, body)) return;
+      if (handleAiCoachRoutes(req, res, parsedUrl, body)) return;
 
       // API 404
       res.writeHead(404, { 'Content-Type': 'application/json' });

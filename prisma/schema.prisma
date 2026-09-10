@@ -1,0 +1,304 @@
+// FitSport Prisma Schema with Complete AI Agent & Sports Intelligence Models
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  ASSISTANT
+  SYSTEM
+  TOOL
+}
+
+enum ActionStatus {
+  IDLE
+  LISTENING
+  PROCESSING
+  SEARCHING
+  ANALYZING
+  SPEAKING
+  SAVED
+  ERROR
+}
+
+enum CheckInType {
+  BREAKFAST
+  LUNCH
+  SNACK
+  DINNER
+  WORKOUT
+  WATER
+  SPORT
+  DAILY_PROGRESS
+  RECOVERY
+}
+
+enum OverlapLevel {
+  LOW
+  MODERATE
+  HIGH
+}
+
+model User {
+  id                   String            @id @default(uuid())
+  phoneNumber          String            @unique
+  name                 String
+  height               Float
+  currentWeight        Float
+  startingWeight       Float
+  targetWeight         Float
+  targetDurationMonths Int               @default(3)
+  fitnessGoal          String
+  calorieGoal          Int               @default(2063)
+  proteinGoal          Float             @default(130.0)
+  carbsGoal            Float             @default(258.0)
+  fatGoal              Float             @default(57.0)
+  waterGoal            Int               @default(3500)
+  interestedSports     String[]
+  meals                Meal[]
+  waterIntakes         WaterIntake[]
+  workouts             Workout[]
+  sportsActivities     SportActivity[]
+  weightHistories      WeightHistory[]
+  activityHistories    ActivityHistory[]
+  reminders            Reminder[]
+  aiConversations      AIConversation[]
+  aiCheckIns           AICheckIn[]
+  aiAgentEvents        AIAgentEvent[]
+  whatsAppSettings     WhatsAppSettings?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+}
+
+model Food {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  serving     String
+  baseGrams   Float      @default(100)
+  calories    Float
+  protein     Float
+  carbs       Float
+  fat         Float
+  iron        Float?
+  vitamins    String?
+  water       Float?
+  mealItems   MealItem[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Meal {
+  id          String     @id @default(uuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    String     // breakfast, lunch, dinner, snacks
+  date        String     // YYYY-MM-DD or 'Today'
+  items       MealItem[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([userId, date])
+}
+
+model MealItem {
+  id          String   @id @default(uuid())
+  mealId      String
+  meal        Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  foodId      String?
+  food        Food?    @relation(fields: [foodId], references: [id])
+  name        String
+  grams       Float
+  calories    Float
+  protein     Float
+  carbs       Float
+  fat         Float
+  iron        Float?
+  createdAt   DateTime @default(now())
+}
+
+model Workout {
+  id              String     @id @default(uuid())
+  userId          String
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String
+  category        String     // Home Workouts, Equipment Workouts
+  subCategory     String?
+  level           String     @default("Beginner")
+  durationMinutes Int
+  caloriesBurned  Int
+  exercises       Exercise[]
+  completedAt     DateTime   @default(now())
+
+  @@index([userId])
+}
+
+model Exercise {
+  id            String   @id @default(uuid())
+  workoutId     String
+  workout       Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  name          String
+  sets          Int
+  reps          String
+  targetMuscles String
+  restSec       Int      @default(45)
+  thumbUrl      String?
+}
+
+model SportActivity {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sport           String
+  durationMinutes Int
+  caloriesBurned  Int
+  intensity       String?
+  date            String
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+}
+
+model WaterIntake {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amountMl  Int
+  time      String
+  date      String
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+model WeightHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weight    Float
+  date      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model ActivityHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // meals, workouts, sports, water, weight, ai_checkin
+  title     String
+  subtitle  String
+  metric    String
+  subMetric String?
+  time      String
+  date      String
+  icon      String
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+model Reminder {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  time      String
+  type      String   // hydration, meal, workout, stretch
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model AIConversation {
+  id        String      @id @default(uuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  AIMessage[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([userId])
+}
+
+model AIMessage {
+  id             String         @id @default(uuid())
+  conversationId String
+  conversation   AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           Role           @default(USER)
+  content        String
+  audioUrl       String?
+  intent         String?
+  toolName       String?
+  toolResult     String?
+  createdAt      DateTime       @default(now())
+
+  @@index([conversationId])
+}
+
+model AICheckIn {
+  id              String      @id @default(uuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            CheckInType
+  enabled         Boolean     @default(true)
+  time            String      // e.g. "08:30 AM"
+  timezone        String      @default("UTC")
+  frequency       String      @default("DAILY")
+  lastTriggeredAt DateTime?
+  nextTriggerAt   DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([userId, type])
+}
+
+model AIAgentEvent {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversationId String?
+  eventType      String   // VOICE_RECEIVED, TRANSCRIPTION_COMPLETE, INTENT_DETECTED, TOOL_STARTED, etc.
+  intent         String?
+  tool           String?
+  status         String
+  durationMs     Int?
+  error          String?
+  createdAt      DateTime @default(now())
+
+  @@index([userId, eventType])
+}
+
+model AIRecommendation {
+  id            String   @id @default(uuid())
+  userId        String
+  type          String   // MOTIVATION, RECOVERY, OVERLAP_ANALYSIS
+  text          String
+  spokenText    String?
+  metricsData   Json?
+  createdAt     DateTime @default(now())
+}
+
+model WhatsAppSettings {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phoneNumber     String
+  enabled         Boolean   @default(false)
+  reportTime      String    @default("09:00 PM")
+  timezone        String    @default("Asia/Kolkata")
+  frequency       String    @default("DAILY")
+  includeNutrition Boolean  @default(true)
+  includeWater    Boolean   @default(true)
+  includeWorkout  Boolean   @default(true)
+  includeSports   Boolean   @default(true)
+  includeWeight   Boolean   @default(true)
+  includeCalories Boolean   @default(true)
+  lastSentAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}

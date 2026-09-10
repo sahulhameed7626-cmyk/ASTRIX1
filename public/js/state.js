@@ -30,10 +30,12 @@ class StateManager {
     const currentWeight = parseFloat(user.currentWeight) || 69.5;
     const targetWeight = parseFloat(user.targetWeight) || 65.0;
     const targetMonths = parseInt(user.targetDurationMonths, 10) || 3;
-    const age = parseInt(user.age, 10) || 25;
+    const age = parseInt(user.age, 10) || 24;
+    const gender = (user.gender || "Male").toLowerCase();
+    const genderOffset = gender === "female" ? -161 : 5;
 
     // Basal Metabolic Rate (BMR) - Mifflin-St Jeor formula
-    const bmr = Math.round((10 * currentWeight) + (6.25 * height) - (5 * age) + 5);
+    const bmr = Math.round((10 * currentWeight) + (6.25 * height) - (5 * age) + genderOffset);
 
     // Total Daily Energy Expenditure (Maintenance TDEE at moderate athletic activity: 1.45)
     const maintenanceCalories = Math.round(bmr * 1.45);
@@ -115,13 +117,15 @@ class StateManager {
           parsed.user.carbsGoal = metrics.carbsGoal;
         }
 
-        // DAILY TRACKING RESET ON LOAD: Each load resets workout, nutrition, water intake, and today's activity to 0
-        parsed.meals = { breakfast: [], lunch: [], dinner: [], snacks: [] };
-        parsed.waterLogs = [];
-        parsed.workouts = [];
-        parsed.sportsActivities = [];
-        if (Array.isArray(parsed.history)) {
-          parsed.history = parsed.history.filter(h => h.date !== "Today");
+        // Ensure structure defaults while preserving today's activity and common history
+        if (!parsed.meals) {
+          parsed.meals = { breakfast: [], lunch: [], dinner: [], snacks: [] };
+        }
+        if (!Array.isArray(parsed.waterLogs)) parsed.waterLogs = [];
+        if (!Array.isArray(parsed.workouts)) parsed.workouts = [];
+        if (!Array.isArray(parsed.sportsActivities)) parsed.sportsActivities = [];
+        if (!Array.isArray(parsed.history)) {
+          parsed.history = [...INITIAL_HISTORY];
         }
         parsed.activeWorkoutSession = null;
         if (!parsed.autoResetSchedule) {
@@ -228,14 +232,7 @@ class StateManager {
   // --- Backend REST API Synchronization ---
   async syncWithBackend() {
     try {
-      // 1. Clear backend daily trackers on page load to ensure fresh 0 slate
-      try {
-        await fetch('/api/reset', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'daily' })
-        });
-      } catch (e) {}
+      // 1. Fetch complete Nutrition Dataset from backend (207 items from PDF)
 
       // 2. Fetch complete Nutrition Dataset from backend (207 items from PDF)
       const nutRes = await fetch('/api/nutrition');

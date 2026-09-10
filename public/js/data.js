@@ -3,6 +3,8 @@ export const INITIAL_USER = {
   name: "Sahul Hameed",
   phone: "+91 99999 88888",
   avatar: "SH",
+  gender: "Male",
+  age: 24,
   height: 178, // cm
   currentWeight: 69.5, // kg
   startingWeight: 72.0, // kg
@@ -37,12 +39,201 @@ export const FOOD_DATABASE = [
 ];
 
 export const WORKOUT_CATEGORIES = [
+  // FEATURED IMAGE WORKOUTS (Matching Athletic UI Reference)
+  {
+    id: "hw-full-body-beg",
+    category: "Home Workouts",
+    subCategory: "Home Workouts",
+    level: "Beginner",
+    title: "Full Body Beginner",
+    duration: 20,
+    calories: 120,
+    intensity: "Beginner",
+    difficulty: "Beginner",
+    equipmentNeeded: "None",
+    exercisesCount: 4,
+    image: "/images/workouts/workout_pushups_hd.jpg",
+    heroImage: "/images/workouts/hero_full_body_beg.jpg",
+    targetMuscles: ["full", "chest", "arms", "core", "legs"],
+    description: "A complete workout to build strength, improve endurance and boost overall fitness. Perfect for beginners.",
+    proTip: "Keep your core tight and maintain good form throughout the workout for better results and reduced injury risk.",
+    musclesWorked: [
+      { name: "Full Body", pct: 100 },
+      { name: "Core", pct: 70 },
+      { name: "Legs", pct: 65 },
+      { name: "Arms", pct: 50 },
+      { name: "Shoulders", pct: 45 }
+    ],
+    exercises: [
+      { name: "Squats", sets: 3, reps: "3 × 12", target: "Quadriceps, Glutes", restSec: 45, thumb: "/images/workouts/thumb_squat.jpg", howTo: "Stand shoulder-width apart, lower hips back and down, keep chest high." },
+      { name: "Push Ups", sets: 3, reps: "3 × 10", target: "Chest, Triceps, Core", restSec: 45, thumb: "/images/workouts/thumb_pushup.jpg", howTo: "Keep body straight, lower chest near floor, push through palms." },
+      { name: "Lunges", sets: 3, reps: "3 × 10", target: "Quads, Hamstrings", restSec: 45, thumb: "/images/workouts/thumb_lunge.jpg", howTo: "Step forward, bend knees to 90 degrees, drive through front heel." },
+      { name: "Plank", sets: 3, reps: "3 × 30 sec", target: "Core Stability", restSec: 45, thumb: "/images/workouts/thumb_plank.jpg", howTo: "Hold forearm plank, engage abs and glutes, keep spine straight." }
+    ]
+  },
+  {
+    id: "hw-leg-strength",
+    category: "Home Workouts",
+    subCategory: "Home Workouts",
+    level: "Beginner",
+    title: "Leg Strength",
+    duration: 30,
+    calories: 220,
+    intensity: "Beginner",
+    difficulty: "Beginner",
+    equipmentNeeded: "None",
+    exercisesCount: 4,
+    image: "/images/workouts/workout_squats_hd.jpg",
+    heroImage: "/images/workouts/workout_squats_hd.jpg",
+    targetMuscles: ["legs", "quads", "glutes"],
+    description: "Targeted lower-body strength routine. Strengthens quadriceps, hamstrings, glutes, and promotes hip and ankle mobility.",
+    proTip: "Drive through your heels on squats and lunges to fully recruit the posterior chain and protect knee joints.",
+    musclesWorked: [
+      { name: "Legs", pct: 95 },
+      { name: "Glutes", pct: 85 },
+      { name: "Calves", pct: 70 },
+      { name: "Core", pct: 60 },
+      { name: "Full Body", pct: 50 }
+    ],
+    exercises: [
+      { name: "Bodyweight Squats", sets: 3, reps: "3 × 15", target: "Quadriceps, Glutes", restSec: 45, thumb: "/images/workouts/thumb_squat.jpg", howTo: "Lower hips until thighs are parallel to the floor, explode upward." },
+      { name: "Walking Lunges", sets: 3, reps: "3 × 12", target: "Hamstrings, Quads", restSec: 45, thumb: "/images/workouts/thumb_lunge.jpg", howTo: "Continuous forward strides maintaining upright torso and knee control." },
+      { name: "Calf Raises", sets: 3, reps: "3 × 20", target: "Gastrocnemius, Soleus", restSec: 30, thumb: "/images/workouts/thumb_squat.jpg", howTo: "Rise onto balls of feet, squeeze at peak, lower slowly." },
+      { name: "Wall Sit Hold", sets: 3, reps: "3 × 45 sec", target: "Quadriceps Isometric", restSec: 45, thumb: "/images/workouts/thumb_plank.jpg", howTo: "Back flat against wall with thighs parallel to floor, maintain hold." }
+    ]
+  },
+  {
+    id: "hw-hiit",
+    category: "Home Workouts",
+    subCategory: "Home Workouts",
+    level: "Advanced",
+    title: "HIIT",
+    duration: 25,
+    calories: 280,
+    intensity: "Advanced",
+    difficulty: "Advanced",
+    equipmentNeeded: "None",
+    exercisesCount: 4,
+    image: "/images/workouts/workout_hiit_hd.jpg",
+    heroImage: "/images/workouts/workout_hiit_hd.jpg",
+    targetMuscles: ["full", "legs", "core"],
+    description: "High-Intensity Interval Training. Rapid calorie burn, cardiovascular elevation, and explosive athletic stamina.",
+    proTip: "Pace your intervals during rounds 1 and 2 so you can maintain maximum explosive speed in round 3.",
+    musclesWorked: [
+      { name: "Full Body", pct: 95 },
+      { name: "Cardio", pct: 90 },
+      { name: "Legs", pct: 80 },
+      { name: "Core", pct: 75 },
+      { name: "Shoulders", pct: 40 }
+    ],
+    exercises: [
+      { name: "High Knees Sprint", sets: 3, reps: "3 × 45 sec", target: "Cardiovascular, Hip Flexors", restSec: 30, thumb: "/images/workouts/thumb_squat.jpg", howTo: "Drive knees up to chest level rapidly while pumping arms." },
+      { name: "Burpees Jump", sets: 3, reps: "3 × 12", target: "Full Body Power", restSec: 45, thumb: "/images/workouts/thumb_pushup.jpg", howTo: "Drop into plank, perform push-up, jump feet in, explode upward." },
+      { name: "Mountain Climbers", sets: 3, reps: "3 × 40 sec", target: "Core, Shoulders", restSec: 30, thumb: "/images/workouts/thumb_plank.jpg", howTo: "Drive knees alternatively into chest while maintaining solid plank." },
+      { name: "Jump Squats", sets: 3, reps: "3 × 15", target: "Explosive Leg Power", restSec: 45, thumb: "/images/workouts/thumb_lunge.jpg", howTo: "Drop into standard squat and explode vertically into the air." }
+    ]
+  },
+  {
+    id: "eq-upper-body-strength",
+    category: "Equipment Workouts",
+    subCategory: "Equipment Workouts",
+    level: "Beginner",
+    title: "Upper Body Strength",
+    duration: 35,
+    calories: 300,
+    intensity: "Beginner",
+    difficulty: "Beginner",
+    equipmentNeeded: "Barbell & Dumbbells",
+    exercisesCount: 4,
+    image: "/images/workouts/workout_upper_body.jpg",
+    heroImage: "/images/workouts/workout_upper_body.jpg",
+    targetMuscles: ["arms", "chest", "back", "shoulders"],
+    description: "Targeted barbell and dumbbell routine. Builds upper-body pulling and pressing strength across chest, lats, and shoulders.",
+    proTip: "Engage your latissimus dorsi before every pull to lock your spine into a rigid neutral position.",
+    musclesWorked: [
+      { name: "Upper Body", pct: 95 },
+      { name: "Back & Lats", pct: 85 },
+      { name: "Chest", pct: 80 },
+      { name: "Arms", pct: 75 },
+      { name: "Core", pct: 55 }
+    ],
+    exercises: [
+      { name: "Barbell Deadlift & Row", sets: 3, reps: "3 × 10", target: "Posterior Chain, Lats", restSec: 60, thumb: "/images/workouts/workout_upper_body.jpg", howTo: "Hinge at hips, maintain flat back, pull barbell into lower ribcage." },
+      { name: "Dumbbell Bench Press", sets: 3, reps: "3 × 12", target: "Pectorals, Triceps", restSec: 45, thumb: "/images/workouts/thumb_pushup.jpg", howTo: "Press dumbbells up in an arch until arms extend, lower with control." },
+      { name: "Overhead Dumbbell Press", sets: 3, reps: "3 × 10", target: "Deltoids, Upper Traps", restSec: 45, thumb: "/images/workouts/thumb_squat.jpg", howTo: "Press weights directly overhead from shoulder height without arching lower back." },
+      { name: "Bicep & Tricep Superset", sets: 3, reps: "3 × 12", target: "Biceps, Triceps", restSec: 45, thumb: "/images/workouts/thumb_lunge.jpg", howTo: "Perform dumbbell bicep curls immediately followed by tricep kickbacks." }
+    ]
+  },
+  {
+    id: "eq-full-body-adv",
+    category: "Equipment Workouts",
+    subCategory: "Equipment Workouts",
+    level: "Advanced",
+    title: "Full Body Advanced",
+    duration: 45,
+    calories: 400,
+    intensity: "Advanced",
+    difficulty: "Advanced",
+    equipmentNeeded: "Dumbbells",
+    exercisesCount: 4,
+    image: "/images/workouts/workout_full_body_adv.jpg",
+    heroImage: "/images/workouts/workout_full_body_adv.jpg",
+    targetMuscles: ["full", "legs", "arms", "core"],
+    description: "Demanding compound strength routine with free weights. Enhances athletic resilience and total-body power.",
+    proTip: "Breathe out forcefully during the concentric exertion phase of each heavy compound lift.",
+    musclesWorked: [
+      { name: "Full Body", pct: 100 },
+      { name: "Legs", pct: 85 },
+      { name: "Core", pct: 80 },
+      { name: "Shoulders", pct: 70 },
+      { name: "Grip & Arms", pct: 65 }
+    ],
+    exercises: [
+      { name: "Dumbbell Walking Lunges", sets: 4, reps: "4 × 12", target: "Quads, Glutes, Grip", restSec: 45, thumb: "/images/workouts/thumb_lunge.jpg", howTo: "Hold dumbbells by sides, step forward with control into walking strides." },
+      { name: "Dumbbell Thrusters", sets: 4, reps: "4 × 10", target: "Legs to Overhead Deltoids", restSec: 60, thumb: "/images/workouts/thumb_squat.jpg", howTo: "Full front squat fluidly transitioning into explosive overhead shoulder press." },
+      { name: "Renegade Rows", sets: 4, reps: "4 × 10", target: "Anti-Rotational Core, Lats", restSec: 45, thumb: "/images/workouts/workout_core_blast.jpg", howTo: "Hold plank on hex dumbbells, alternate rowing each weight without tilting hips." },
+      { name: "Farmer's Carry Hold", sets: 4, reps: "4 × 60 sec", target: "Forearms, Trapezius, Core", restSec: 60, thumb: "/images/workouts/thumb_plank.jpg", howTo: "Walk or hold heavy dumbbells with tall posture and retracted shoulder blades." }
+    ]
+  },
+  {
+    id: "eq-core-blast",
+    category: "Equipment Workouts",
+    subCategory: "Equipment Workouts",
+    level: "Beginner",
+    title: "Core Blast",
+    duration: 20,
+    calories: 180,
+    intensity: "Beginner",
+    difficulty: "Beginner",
+    equipmentNeeded: "Dumbbells",
+    exercisesCount: 4,
+    image: "/images/workouts/workout_core_blast.jpg",
+    heroImage: "/images/workouts/workout_core_blast.jpg",
+    targetMuscles: ["core", "arms"],
+    description: "High-density weighted core routine. Carves abdominal definition and stabilizes pelvic kinetic transfer.",
+    proTip: "Resist rotation through your hips during renegade rows to force maximal transverse abdominis recruitment.",
+    musclesWorked: [
+      { name: "Core & Abs", pct: 95 },
+      { name: "Obliques", pct: 85 },
+      { name: "Arms & Shoulders", pct: 60 },
+      { name: "Lower Back", pct: 55 },
+      { name: "Full Body", pct: 45 }
+    ],
+    exercises: [
+      { name: "Dumbbell Renegade Rows", sets: 3, reps: "3 × 12", target: "Core Anti-Rotation, Back", restSec: 45, thumb: "/images/workouts/workout_core_blast.jpg", howTo: "In push-up position on weights, row one dumbbell up while bracing core." },
+      { name: "Russian Twists with Weight", sets: 3, reps: "3 × 20", target: "Rotational Obliques", restSec: 45, thumb: "/images/workouts/thumb_squat.jpg", howTo: "Elevate feet, rotate torso side to side touching weight to floor." },
+      { name: "Dumbbell Plank Hold", sets: 3, reps: "3 × 45 sec", target: "Isometric Core Shield", restSec: 45, thumb: "/images/workouts/thumb_plank.jpg", howTo: "Hold rigid straight-arm plank gripping dumbbells, tension across body." },
+      { name: "Hanging / Lying Knee Tucks", sets: 3, reps: "3 × 12", target: "Lower Rectus Abdominis", restSec: 45, thumb: "/images/workouts/thumb_lunge.jpg", howTo: "Drive knees toward chest pulling with lower abdominal musculature." }
+    ]
+  },
   // 1. BASIC WORKOUTS - NO EQUIPMENT (From PDF Guide)
   {
     id: "hw-pushups",
     category: "Home Workouts",
     subCategory: "Basic (No Equipment)",
+    level: "Beginner",
     title: "Push-Ups Foundation",
+    image: "/images/workouts/workout_pushups_hd.jpg",
     duration: 30,
     calories: 135,
     intensity: "Basic",

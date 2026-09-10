@@ -33,6 +33,12 @@ export function handleUserRoutes(req, res, url, body) {
     if (body.targetDurationMonths) {
       db.store.user.targetDurationMonths = parseInt(body.targetDurationMonths, 10);
     }
+    if (body.age) {
+      db.store.user.age = parseInt(body.age, 10);
+    }
+    if (body.gender) {
+      db.store.user.gender = body.gender;
+    }
 
     // Dynamic 1 kg = 7,700 kcal & macro grams based on setted weight
     const curW = db.store.user.currentWeight || 69.5;
@@ -40,7 +46,10 @@ export function handleUserRoutes(req, res, url, body) {
     const setW = db.store.user.targetWeight || curW;
     const months = db.store.user.targetDurationMonths || 3;
     const height = db.store.user.height || 178;
-    const bmr = Math.round(10 * curW + 6.25 * height - 5 * 24 + 5);
+    const userAge = parseInt(db.store.user.age, 10) || 24;
+    const userGender = (db.store.user.gender || 'Male').toLowerCase();
+    const genderOffset = userGender === 'female' ? -161 : 5;
+    const bmr = Math.round(10 * curW + 6.25 * height - 5 * userAge + genderOffset);
     const maintenance = Math.round(bmr * 1.45);
     const diff = Math.round((tgtW - curW) * 10) / 10;
     const totalDays = Math.max(15, months * 30);

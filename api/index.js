@@ -10,6 +10,7 @@ import { handleSummaryRoutes } from '../backend/routes/summary.js';
 import { handleUserRoutes } from '../backend/routes/user.js';
 import { handleResetRoutes } from '../backend/routes/reset.js';
 import { handleTelegramRoutes } from '../backend/routes/telegram.js';
+import { handleAiCoachRoutes } from '../backend/routes/aiCoach.js';
 
 export default async function handler(req, res) {
   // Set CORS headers
@@ -97,6 +98,9 @@ export default async function handler(req, res) {
     if (res.writableEnded) return;
 
     await handleTelegramRoutes(req, res, routeUrl, body);
+    if (res.writableEnded) return;
+
+    handleAiCoachRoutes(req, res, routeUrl, body);
     if (res.writableEnded) return;
 
     if (!res.writableEnded) {

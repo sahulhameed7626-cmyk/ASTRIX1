@@ -67,6 +67,21 @@ const DEFAULT_STORE = {
   waterLogs: [],
   workouts: [],
   sportsActivities: [],
+  aiConversations: [],
+  aiCheckInSettings: {
+    enabled: true,
+    voiceEnabled: true,
+    checkIns: {
+      breakfast: { enabled: true, time: "08:30 AM" },
+      lunch: { enabled: true, time: "01:00 PM" },
+      snack: { enabled: true, time: "05:00 PM" },
+      dinner: { enabled: true, time: "08:30 PM" }
+    },
+    workoutFollowUp: true,
+    sportRecoveryCheck: true,
+    dailyProgressReview: { enabled: true, time: "09:00 PM" },
+    preferredVoice: "default"
+  },
   reminders: [
     { id: "r1", title: "Breakfast", time: "08:00 AM", repeat: "Everyday", type: "meal", icon: "apple", active: true },
     { id: "r2", title: "Lunch", time: "01:00 PM", repeat: "Everyday", type: "meal", icon: "apple", active: true },
@@ -172,7 +187,10 @@ class Database {
   loadStore() {
     try {
       if (fs.existsSync(STORE_PATH)) {
-        return JSON.parse(fs.readFileSync(STORE_PATH, 'utf-8'));
+        const loaded = JSON.parse(fs.readFileSync(STORE_PATH, 'utf-8'));
+        if (!loaded.aiConversations) loaded.aiConversations = [];
+        if (!loaded.aiCheckInSettings) loaded.aiCheckInSettings = JSON.parse(JSON.stringify(DEFAULT_STORE.aiCheckInSettings));
+        return loaded;
       }
     } catch (e) {
       console.warn("Could not read store.json, resetting to default", e);

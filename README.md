@@ -345,6 +345,79 @@ Bot configuration is managed in [backend/routes/telegram.js](file:///c:/sahul%20
 
 ---
 
+## 🎙️ FitSport AI Voice Coach & Intelligent Agent
+
+FitSport includes a built-in stateful voice agent: **FitSport AI Coach**. It allows athletes to speak naturally to log meals, track hydration, record workouts, log sports sessions, check daily progress, and analyze musculoskeletal fatigue overlap.
+
+### 🏛️ Complete AI Architecture
+
+```text
+                         FITSPORT
+                            │
+             ┌──────────────┴──────────────┐
+             │                             │
+       Existing App                  AI VOICE COACH
+             │                             │
+             │                        Microphone
+             │                             │
+             │                           Whisper
+             │                             │
+             │                         Transcript
+             │                             │
+             │                       LangGraph Agent
+             │                             │
+             │                          Ollama
+             │                             │
+             │                        Tool Calling
+             │                             │
+             │       ┌─────────────┬───────┼─────────────┐
+             │       │             │       │             │
+             │   Nutrition     Workout   Sports       Water
+             │       │             │       │             │
+             │       └─────────────┴───────┴─────────────┘
+             │                             │
+             │                      FitSport Services
+             │                             │
+             │                          Prisma
+             │                             │
+             │                        PostgreSQL
+             │                             │
+             │                      Common History
+             │                             │
+             │                    AI Recommendation
+             │                             │
+             │                          Piper
+             │                             │
+             │                       Voice Response
+             │
+             └──────────────┬──────────────┘
+                            │
+                    Scheduler / Reminders
+                            │
+                     Twilio WhatsApp
+```
+
+### 🧠 Core Capabilities
+1. **Natural Language Food Extraction & Missing Quantity Follow-Up**:
+   - User: *"I had rice for lunch."*
+   - AI Coach: *"Approximately how much rice did you have? (e.g. 1 cup, 150 grams, 1 bowl)"*
+   - User: *"One cup."*
+   - AI Coach: Automatically resolves missing quantity, calculates scaled nutrition (`scaledValue = baseValue * quantity / baseServingSize`), saves the meal, updates Common History, and speaks the confirmation.
+2. **Universal Workout → Muscle → Sport Overlap Intelligence**:
+   - Dynamically analyzes muscular recruitment between any completed workout and planned sport (e.g. Leg Day + Football, Chest Workout + Tennis, Back Workout + Swimming).
+   - Follows strict AI safety guardrails: never diagnoses injuries, provides cautious recovery advice.
+3. **Voice-First Audio Pipeline**:
+   - Speech-To-Text via Whisper abstraction with Web Speech fallback.
+   - Text-To-Speech via Piper abstraction with natural browser speech synthesis fallback.
+   - Live real-time transcript streaming.
+4. **Common History Sync**:
+   - Every single AI-initiated action writes directly to FitSport's unified Common History timeline.
+5. **Scheduled Check-Ins & WhatsApp Summary**:
+   - Proactive check-in scheduling for Breakfast (8:30 AM), Lunch (1:00 PM), Snack (5:00 PM), and Dinner (8:30 PM).
+   - Automated daily history delivery via Twilio WhatsApp without OTP.
+
+---
+
 ## 🚢 Deployment
 
 ### 1. Vercel (Serverless)
