@@ -503,8 +503,8 @@ export class AIAgent {
 /**
  * HTTP Route Handler for AI Coach API
  */
-export function handleAiCoachRoutes(req, res, url, body = {}) {
-  if (handleNewAiCoachRoutes(req, res, url, body)) {
+export async function handleAiCoachRoutes(req, res, url, body = {}) {
+  if (await handleNewAiCoachRoutes(req, res, url, body)) {
     return true;
   }
   const agent = new AIAgent(db);
@@ -513,7 +513,8 @@ export function handleAiCoachRoutes(req, res, url, body = {}) {
   if (url.pathname === '/api/ai/chat' && req.method === 'POST') {
     const message = body.message || body.text || body.query || '';
     const sessionContext = body.sessionContext || body.context || {};
-    agent.processUserMessage(message, sessionContext).then(response => {
+    try {
+      const response = await agent.processUserMessage(message, sessionContext);
       // Save conversation log
       agent.saveAIConversation({
         userMessage: message,
@@ -522,12 +523,13 @@ export function handleAiCoachRoutes(req, res, url, body = {}) {
       });
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify(response));
-    }).catch(err => {
+      res.end(JSON.stringify(response));
+      return true;
+    } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ error: err.message }));
-    });
-    return true;
+      res.end(JSON.stringify({ error: err.message }));
+      return true;
+    }
   }
 
   // GET /api/ai/settings

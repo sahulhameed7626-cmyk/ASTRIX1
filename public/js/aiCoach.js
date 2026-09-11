@@ -43,7 +43,8 @@ class FitSportAICoach {
     if (SpeechRecognition) {
       try {
         this.speechRecognition = new SpeechRecognition();
-        this.speechRecognition.continuous = true;
+        const isMobileOrSafari = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (!window.chrome && Boolean(window.webkitSpeechRecognition));
+        this.speechRecognition.continuous = !isMobileOrSafari;
         this.speechRecognition.interimResults = true;
         this.speechRecognition.maxAlternatives = 1;
 
@@ -52,7 +53,7 @@ class FitSportAICoach {
         this.speechRecognition.lang = systemLang.startsWith('en') ? systemLang : 'en-US';
 
         this.speechRecognition.onstart = () => {
-          console.log(`[FitSport Voice] Web Speech Recognition active (lang: ${this.speechRecognition.lang})`);
+          console.log(`[FitSport Voice] Web Speech Recognition active (lang: ${this.speechRecognition.lang}, continuous: ${this.speechRecognition.continuous})`);
           this.isListening = true;
           this.updateState("listening", "🎙️ Listening... Speak naturally now");
           const textInput = document.getElementById("aiCoachTextInput");
@@ -64,10 +65,12 @@ class FitSportAICoach {
         this.speechRecognition.onresult = (event) => {
           let interimTranscript = '';
           let finalTranscript = '';
+          let hasFinal = false;
           for (let i = 0; i < event.results.length; ++i) {
             const res = event.results[i];
             if (res.isFinal) {
               finalTranscript += res[0].transcript + ' ';
+              hasFinal = true;
             } else {
               interimTranscript += res[0].transcript;
             }
@@ -85,14 +88,15 @@ class FitSportAICoach {
             // Real-time visual feedback in status bar
             this.updateState("listening", `"${cleanWords}"`);
 
-            // Auto-dispatch after 1.8 seconds of natural pause in speech
+            // Auto-dispatch after natural pause: 850ms if sentence finalized, 1600ms if interim
             clearTimeout(this.speechSilenceTimer);
+            const pauseMs = hasFinal ? 850 : 1600;
             this.speechSilenceTimer = setTimeout(() => {
               if (this.isListening && !this.manualStop && this.latestRecognizedText) {
                 console.log("[FitSport Voice] Speech pause detected. Dispatching:", this.latestRecognizedText);
                 this.dispatchCurrentSpeech();
               }
-            }, 1800);
+            }, pauseMs);
           }
         };
 
@@ -312,6 +316,7 @@ class FitSportAICoach {
       try {
         this.speechRecognition.start();
         console.log("[FitSport Voice] Web Speech started successfully.");
+        return;
       } catch (e) {
         if (e.name === 'InvalidStateError') {
           // Already running or restarting
@@ -323,11 +328,11 @@ class FitSportAICoach {
               }
             }, 150);
           } catch (err) {}
+          return;
         } else {
-          console.warn("[FitSport Voice] speechRecognition start warning:", e);
+          console.warn("[FitSport Voice] speechRecognition start error, falling back to MediaRecorder:", e);
         }
       }
-      return;
     }
 
     // Fallback: MediaRecorder for browsers without Web Speech Recognition
@@ -344,13 +349,16 @@ class FitSportAICoach {
     try {
       this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       this.audioChunks = [];
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
+      const mimeType = (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('audio/webm')) ? 'audio/webm'
+                     : (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('audio/mp4')) ? 'audio/mp4'
+                     : (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('audio/ogg')) ? 'audio/ogg'
+                     : '';
       this.mediaRecorder = new MediaRecorder(this.mediaStream, mimeType ? { mimeType } : undefined);
       this.mediaRecorder.ondataavailable = (e) => {
         if (e.data && e.data.size > 0) this.audioChunks.push(e.data);
       };
       this.mediaRecorder.start();
-      console.log("[FitSport Voice] MediaRecorder fallback started.");
+      console.log("[FitSport Voice] MediaRecorder fallback started with mimeType:", mimeType || "default");
       this.updateState("listening", "🎙️ Recording audio... Tap mic when done");
     } catch (err) {
       console.warn("[FitSport Voice] Microphone permission / recording warning:", err.message);

@@ -29,11 +29,13 @@ export default async function handler(req, res) {
 
   // Reconstruct full pathname from Vercel catch-all param if needed
   let pathname = parsedUrl.pathname;
-  if (req.query) {
-    const catchAll = req.query.all || req.query.path || req.query.slug || req.query.match;
-    if (catchAll) {
-      const segments = Array.isArray(catchAll) ? catchAll.join('/') : catchAll;
-      pathname = '/api/' + segments;
+  if (pathname === '/api' || pathname === '/api/' || pathname === '/' || pathname.includes('[')) {
+    if (req.query) {
+      const catchAll = req.query.all || req.query.path || req.query.slug || req.query.match;
+      if (catchAll) {
+        const segments = Array.isArray(catchAll) ? catchAll.join('/') : catchAll;
+        pathname = '/api/' + segments;
+      }
     }
   }
   if (!pathname.startsWith('/api')) {
@@ -100,7 +102,7 @@ export default async function handler(req, res) {
     await handleTelegramRoutes(req, res, routeUrl, body);
     if (res.writableEnded) return;
 
-    handleAiCoachRoutes(req, res, routeUrl, body);
+    await handleAiCoachRoutes(req, res, routeUrl, body);
     if (res.writableEnded) return;
 
     if (!res.writableEnded) {

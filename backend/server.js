@@ -84,7 +84,7 @@ const server = http.createServer((req, res) => {
       if (handleUserRoutes(req, res, parsedUrl, body)) return;
       if (handleResetRoutes(req, res, parsedUrl, body)) return;
       if (await handleTelegramRoutes(req, res, parsedUrl, body)) return;
-      if (handleAiCoachRoutes(req, res, parsedUrl, body)) return;
+      if (await handleAiCoachRoutes(req, res, parsedUrl, body)) return;
 
       // API 404
       res.writeHead(404, { 'Content-Type': 'application/json' });

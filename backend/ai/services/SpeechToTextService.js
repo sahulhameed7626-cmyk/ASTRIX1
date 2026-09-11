@@ -2,6 +2,7 @@
 import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 export class SpeechToTextService {
   constructor(config = {}) {
@@ -29,7 +30,7 @@ export class SpeechToTextService {
     let tempCreated = false;
 
     if (Buffer.isBuffer(audioBufferOrPath)) {
-      filePath = path.join(process.cwd(), `temp_audio_${Date.now()}.wav`);
+      filePath = path.join(os.tmpdir(), `temp_audio_${Date.now()}.wav`);
       fs.writeFileSync(filePath, audioBufferOrPath);
       tempCreated = true;
     }

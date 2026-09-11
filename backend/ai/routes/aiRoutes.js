@@ -5,7 +5,7 @@ import { aiContextService } from '../services/AIContextService.js';
 import { voiceService } from '../services/VoiceService.js';
 import { recommendationService } from '../services/RecommendationService.js';
 
-export function handleNewAiCoachRoutes(req, res, url, body = {}) {
+export async function handleNewAiCoachRoutes(req, res, url, body = {}) {
   // Resolve authenticated user ID from Authorization header / token / session (Section 5)
   const authHeader = req.headers['authorization'] || req.headers['x-user-id'] || '';
   let userId = fitSportTools.db.store.user?.id || 'user_sahul_hameed';
@@ -42,14 +42,15 @@ export function handleNewAiCoachRoutes(req, res, url, body = {}) {
     const conversationId = body.conversationId || null;
     const inputMessage = body.message || body.text || '';
 
-    fitSportAgentGraph.execute({
-      userId,
-      conversationId,
-      inputMessage,
-      audioBuffer: audioData
-    }).then(result => {
+    try {
+      const result = await fitSportAgentGraph.execute({
+        userId,
+        conversationId,
+        inputMessage,
+        audioBuffer: audioData
+      });
       console.log(`[AI] Agent completed intent: ${result.intent}`);
-      sendJson(200, {
+      return sendJson(200, {
         success: true,
         conversationId: result.conversationId,
         transcript: result.transcript,
@@ -62,9 +63,9 @@ export function handleNewAiCoachRoutes(req, res, url, body = {}) {
         missingInformation: result.missingInformation || null,
         error: null
       });
-    }).catch(err => {
+    } catch (err) {
       console.error(`[AI] Agent execution error:`, err);
-      sendJson(500, {
+      return sendJson(500, {
         success: false,
         conversationId,
         transcript: "",
@@ -74,8 +75,7 @@ export function handleNewAiCoachRoutes(req, res, url, body = {}) {
         actions: [],
         error: { code: "AGENT_ERROR", message: err.message }
       });
-    });
-    return true;
+    }
   }
 
   // 2. POST /api/ai/chat — Text or Recognized Speech Pipeline (Section 4 & 24)
@@ -91,17 +91,18 @@ export function handleNewAiCoachRoutes(req, res, url, body = {}) {
       console.log(`[AI_DEBUG] Session context:`, sessionContext);
     }
 
-    fitSportAgentGraph.execute({
-      userId,
-      conversationId,
-      inputMessage: message,
-      sessionContext
-    }).then(result => {
+    try {
+      const result = await fitSportAgentGraph.execute({
+        userId,
+        conversationId,
+        inputMessage: message,
+        sessionContext
+      });
       console.log(`[AI] Agent completed intent: ${result.intent}`);
       if (isDebug) {
         console.log(`[AI_DEBUG] Actions executed:`, result.actions);
       }
-      sendJson(200, {
+      return sendJson(200, {
         success: true,
         conversationId: result.conversationId,
         transcript: result.transcript,
@@ -114,9 +115,9 @@ export function handleNewAiCoachRoutes(req, res, url, body = {}) {
         missingInformation: result.missingInformation || null,
         error: null
       });
-    }).catch(err => {
+    } catch (err) {
       console.error(`[AI] Agent error:`, err);
-      sendJson(500, {
+      return sendJson(500, {
         success: false,
         conversationId,
         transcript: message,
@@ -126,8 +127,7 @@ export function handleNewAiCoachRoutes(req, res, url, body = {}) {
         actions: [],
         error: { code: "AGENT_ERROR", message: err.message }
       });
-    });
-    return true;
+    }
   }
 
   // 3. POST /api/ai/transcribe — Speech-To-Text Whisper endpoint
@@ -137,23 +137,23 @@ export function handleNewAiCoachRoutes(req, res, url, body = {}) {
       const b64 = audio.replace(/^data:audio\/\w+;base64,/, '');
       audio = Buffer.from(b64, 'base64');
     }
-    voiceService.processAudioInput(audio).then(stt => {
-      sendJson(200, stt);
-    }).catch(err => {
-      sendJson(500, { error: err.message });
-    });
-    return true;
+    try {
+      const stt = await voiceService.processAudioInput(audio);
+      return sendJson(200, stt);
+    } catch (err) {
+      return sendJson(500, { error: err.message });
+    }
   }
 
   // 4. POST /api/ai/speak — Text-To-Speech Piper endpoint
   if (url.pathname === '/api/ai/speak' && req.method === 'POST') {
     const text = body.text || body.message || '';
-    voiceService.synthesizeResponse(text).then(tts => {
-      sendJson(200, tts);
-    }).catch(err => {
-      sendJson(500, { error: err.message });
-    });
-    return true;
+    try {
+      const tts = await voiceService.synthesizeResponse(text);
+      return sendJson(200, tts);
+    } catch (err) {
+      return sendJson(500, { error: err.message });
+    }
   }
 
   // 5. GET /api/ai/conversations & /api/ai/conversations/:id
