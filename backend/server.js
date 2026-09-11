@@ -77,7 +77,7 @@ const server = http.createServer((req, res) => {
       if (handleWaterRoutes(req, res, parsedUrl, body)) return;
       if (handleWorkoutRoutes(req, res, parsedUrl, body)) return;
       if (handleSportsRoutes(req, res, parsedUrl, body)) return;
-      if (handleHistoryRoutes(req, res, parsedUrl)) return;
+      if (handleHistoryRoutes(req, res, parsedUrl, body)) return;
       if (handleAnalyticsRoutes(req, res, parsedUrl)) return;
       if (handleReminderRoutes(req, res, parsedUrl, body)) return;
       if (handleSummaryRoutes(req, res, parsedUrl)) return;

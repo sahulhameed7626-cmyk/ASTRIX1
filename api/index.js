@@ -81,7 +81,7 @@ export default async function handler(req, res) {
     handleSportsRoutes(req, res, routeUrl, body);
     if (res.writableEnded) return;
 
-    handleHistoryRoutes(req, res, routeUrl);
+    handleHistoryRoutes(req, res, routeUrl, body);
     if (res.writableEnded) return;
 
     handleAnalyticsRoutes(req, res, routeUrl);

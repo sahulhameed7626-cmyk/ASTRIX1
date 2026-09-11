@@ -246,7 +246,13 @@ class StateManager {
       if (mealsRes.ok) {
         const mealsData = await mealsRes.json();
         if (mealsData.meals) {
-          this.state.meals = mealsData.meals;
+          for (const cat of ['breakfast', 'lunch', 'dinner', 'snacks']) {
+            const bList = mealsData.meals[cat] || [];
+            const lList = this.state.meals[cat] || [];
+            const bIds = new Set(bList.map(m => m.id));
+            const localOnly = lList.filter(m => !bIds.has(m.id));
+            this.state.meals[cat] = [...bList, ...localOnly];
+          }
         }
       }
 
@@ -255,7 +261,9 @@ class StateManager {
       if (waterRes.ok) {
         const waterData = await waterRes.json();
         if (waterData.logs) {
-          this.state.waterLogs = waterData.logs;
+          const bIds = new Set(waterData.logs.map(w => w.id));
+          const localOnly = (this.state.waterLogs || []).filter(w => !bIds.has(w.id));
+          this.state.waterLogs = [...waterData.logs, ...localOnly];
         }
       }
 
@@ -264,7 +272,9 @@ class StateManager {
       if (histRes.ok) {
         const histData = await histRes.json();
         if (histData.timeline) {
-          this.state.history = histData.timeline;
+          const bIds = new Set(histData.timeline.map(h => h.id));
+          const localOnly = (this.state.history || []).filter(h => !bIds.has(h.id));
+          this.state.history = [...localOnly, ...histData.timeline];
         }
       }
 
@@ -357,6 +367,122 @@ class StateManager {
     const achieved = Math.abs(initial - currentWeight);
     const pct = Math.min(100, Math.max(0, Math.round((achieved / totalDiff) * 100)));
     return pct || 60;
+  }
+
+  // --- AI Agent Unified Action Recorder ---
+  recordAiAction(action) {
+    if (!action || !action.type) return;
+
+    if (action.type === "MEAL_CREATED" && action.item) {
+      const item = action.item;
+      const cat = (item.category || "Lunch").toLowerCase();
+      if (!this.state.meals[cat]) this.state.meals[cat] = [];
+      const mId = item.id || ("m_ai_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6));
+      if (!this.state.meals[cat].some(m => m.id === mId)) {
+        this.state.meals[cat].push({
+          id: mId,
+          name: item.name,
+          category: item.category || "Lunch",
+          grams: item.grams || 100,
+          calories: item.calories || 0,
+          protein: item.protein || 0,
+          carbs: item.carbs || 0,
+          fat: item.fat || 0,
+          fiber: item.fiber || 2,
+          iron: item.iron || 0.8
+        });
+      }
+
+      const histId = "h_ai_" + mId;
+      if (!this.state.history.some(h => h.id === histId)) {
+        this.state.history.unshift({
+          id: histId,
+          type: "meals",
+          title: `${item.category || 'Lunch'}: ${item.name}`,
+          subtitle: `${item.grams}g • Logged via FitSport AI Coach`,
+          metric: `${item.calories} kcal`,
+          subMetric: `${item.protein}g Protein • ${item.carbs || 0}g Carbs`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          date: "Today",
+          icon: "apple"
+        });
+      }
+    }
+
+    else if (action.type === "WATER_LOGGED") {
+      const amt = parseInt(action.amount, 10) || 250;
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      this.state.waterLogs.push({
+        id: "w_ai_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+        time: timeStr,
+        amount: amt
+      });
+
+      this.state.history.unshift({
+        id: "h_ai_w_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+        type: "water",
+        title: "Hydration Check-in",
+        subtitle: `Logged +${amt} ml via FitSport AI Coach`,
+        metric: `+${amt} ml`,
+        subMetric: `Daily Total: ${(action.totalMl || this.getWaterTotal())} ml`,
+        time: timeStr,
+        date: "Today",
+        icon: "droplet"
+      });
+    }
+
+    else if (action.type === "WORKOUT_COMPLETED" && action.data) {
+      const wk = action.data;
+      if (!this.state.workouts) this.state.workouts = [];
+      this.state.workouts.push(wk);
+
+      this.state.history.unshift({
+        id: "h_ai_wk_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+        type: "workouts",
+        title: `Workout: ${wk.title || 'Strength Workout'}`,
+        subtitle: `${wk.durationMinutes || 45} min • Completed via FitSport AI Coach`,
+        metric: `${wk.caloriesBurned || 280} kcal burned`,
+        subMetric: `Muscles: ${(action.muscles || ['Full Body']).slice(0, 3).join(', ')}`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        date: "Today",
+        icon: "dumbbell"
+      });
+    }
+
+    else if (action.type === "SPORT_RECORDED" && action.data) {
+      const sp = action.data;
+      if (!this.state.sportsActivities) this.state.sportsActivities = [];
+      this.state.sportsActivities.push(sp);
+
+      this.state.history.unshift({
+        id: "h_ai_sp_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+        type: "sports",
+        title: `Sport: ${sp.sport || 'Sports Session'}`,
+        subtitle: `${sp.durationMinutes || 60} min • Logged via FitSport AI Coach`,
+        metric: `${sp.caloriesBurned || 380} kcal burned`,
+        subMetric: `Duration: ${sp.durationMinutes || 60} min`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        date: "Today",
+        icon: "activity"
+      });
+    }
+
+    else if (action.type === "WEIGHT_UPDATED" && action.weight) {
+      this.state.user.currentWeight = parseFloat(action.weight);
+      this.state.history.unshift({
+        id: "h_ai_wt_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+        type: "weight",
+        title: "Weight Check-in",
+        subtitle: `Updated via FitSport AI Coach`,
+        metric: `${action.weight} kg`,
+        subMetric: `Target: ${this.state.user.targetWeight} kg`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        date: "Today",
+        icon: "chart"
+      });
+    }
+
+    this.saveState();
   }
 
   // --- API Mutators ---

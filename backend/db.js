@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -27,6 +28,7 @@ function resolveDataFilePath(filename, fallbackUrl) {
 }
 
 const STORE_PATH = resolveDataFilePath('store.json', STORE_URL);
+const TMP_STORE_PATH = path.join(os.tmpdir(), 'fitsport_store.json');
 const NUTRITION_DATASET_PATH = resolveDataFilePath('nutritionDataset.json', NUTRITION_DATASET_URL);
 
 // Load raw nutrition dataset
@@ -186,6 +188,12 @@ class Database {
 
   loadStore() {
     try {
+      if (fs.existsSync(TMP_STORE_PATH)) {
+        const loaded = JSON.parse(fs.readFileSync(TMP_STORE_PATH, 'utf-8'));
+        if (!loaded.aiConversations) loaded.aiConversations = [];
+        if (!loaded.aiCheckInSettings) loaded.aiCheckInSettings = JSON.parse(JSON.stringify(DEFAULT_STORE.aiCheckInSettings));
+        return loaded;
+      }
       if (fs.existsSync(STORE_PATH)) {
         const loaded = JSON.parse(fs.readFileSync(STORE_PATH, 'utf-8'));
         if (!loaded.aiConversations) loaded.aiConversations = [];
@@ -205,12 +213,15 @@ class Database {
     return this.store;
   }
 
-
   saveStore(dataToSave) {
+    const payload = JSON.stringify(dataToSave || this.store, null, 2);
     try {
-      fs.writeFileSync(STORE_PATH, JSON.stringify(dataToSave || this.store, null, 2), 'utf-8');
+      fs.writeFileSync(TMP_STORE_PATH, payload, 'utf-8');
+    } catch (e) {}
+    try {
+      fs.writeFileSync(STORE_PATH, payload, 'utf-8');
     } catch (e) {
-      console.error("Could not write store.json", e);
+      // Read-only file system on Vercel is expected; tmp write succeeded
     }
   }
 

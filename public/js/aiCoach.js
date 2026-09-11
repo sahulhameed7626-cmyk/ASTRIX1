@@ -640,8 +640,13 @@ class FitSportAICoach {
         }
       }
 
-      // If action updated database, sync frontend state with backend & Common History
+      // If action updated database, record in appState & Common History
       if (result.actions && result.actions.length > 0) {
+        for (const act of result.actions) {
+          if (typeof appState.recordAiAction === "function") {
+            appState.recordAiAction(act);
+          }
+        }
         this.updateState("saved", "Saved to Common History ✓");
         await appState.syncWithBackend();
         appState.notify();
