@@ -2,15 +2,15 @@
   "user": {
     "id": "user_sahul_hameed",
     "name": "sahul",
-    "phone": "+91 6379048418",
+    "phone": "+91 566656556",
     "avatar": "SA",
     "gender": "Male",
     "age": 24,
     "height": 178,
     "currentWeight": 69.5,
-    "startingWeight": 72,
-    "targetWeight": 63.5,
-    "targetDurationMonths": 6,
+    "startingWeight": 69.5,
+    "targetWeight": 65,
+    "targetDurationMonths": 3,
     "interestedSports": [
       "Cycling",
       "Running",
@@ -18,10 +18,10 @@
       "Badminton"
     ],
     "fitnessGoal": "Improve Sports Performance",
-    "calorieGoal": 2198,
-    "proteinGoal": 127,
-    "carbsGoal": 285,
-    "fatGoal": 61,
+    "calorieGoal": 2070,
+    "proteinGoal": 130,
+    "carbsGoal": 257,
+    "fatGoal": 58,
     "waterGoal": 3500,
     "ironGoal": 18,
     "fiberGoal": 35
@@ -146,6 +146,30 @@
         "calories": 195,
         "protein": 4.1,
         "carbs": 42.3,
+        "fat": 0.5,
+        "fiber": 2,
+        "iron": 0.8
+      },
+      {
+        "id": "m_ai_1789099722970_950",
+        "name": "Egg",
+        "category": "Lunch",
+        "grams": 50,
+        "calories": 72,
+        "protein": 6.3,
+        "carbs": 0.4,
+        "fat": 4.8,
+        "fiber": 2,
+        "iron": 0.8
+      },
+      {
+        "id": "m_ai_1789099723029_214",
+        "name": "Rice",
+        "category": "Lunch",
+        "grams": 150,
+        "calories": 195,
+        "protein": 4.1,
+        "carbs": 42,
         "fat": 0.5,
         "fiber": 2,
         "iron": 0.8
@@ -389,6 +413,28 @@
     }
   ],
   "history": [
+    {
+      "id": "h_ai_1789099723029_330",
+      "type": "meals",
+      "title": "Lunch: Rice",
+      "subtitle": "150g • Added via AI Voice Coach",
+      "metric": "195 kcal",
+      "subMetric": "4.1g Protein • 42g Carbs",
+      "time": "09:38 AM",
+      "date": "Today",
+      "icon": "apple"
+    },
+    {
+      "id": "h_ai_1789099722970_155",
+      "type": "meals",
+      "title": "Lunch: Egg",
+      "subtitle": "50g • Added via AI Voice Coach",
+      "metric": "72 kcal",
+      "subMetric": "6.3g Protein • 0.4g Carbs",
+      "time": "09:38 AM",
+      "date": "Today",
+      "icon": "apple"
+    },
     {
       "id": "h_ai_1789067060447_719",
       "type": "workouts",

@@ -646,9 +646,11 @@ class StateManager {
     return { sport, calories, duration: durationMinutes };
   }
 
-  async completeWorkout(workoutId, durationActual) {
+  async completeWorkout(workoutId, durationActual, caloriesBurned) {
     const workout = WORKOUT_CATEGORIES.find(w => w.id === workoutId) || WORKOUT_CATEGORIES[0];
-    const calories = workout.calories;
+    const userWeight = (this.state.user && this.state.user.currentWeight) ? Number(this.state.user.currentWeight) : 70;
+    const duration = Number(durationActual) || workout.duration || 30;
+    const calories = caloriesBurned != null ? Number(caloriesBurned) : Math.max(10, Math.round(workout.calories * (userWeight / 70) * (duration / 30)));
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     this.state.history.unshift({
@@ -657,7 +659,7 @@ class StateManager {
       title: `Workout: ${workout.title}`,
       subtitle: `${workout.category} (${workout.subCategory}) completed`,
       metric: `${calories} kcal burned`,
-      subMetric: `Duration: ${durationActual || workout.duration} min • Completed`,
+      subMetric: `Duration: ${duration} min • Dynamic MET (${userWeight}kg)`,
       time: timeStr,
       date: "Today",
       icon: "dumbbell"

@@ -3102,3 +3102,413 @@ input:checked + .slider:before {
   line-height: 1.4;
   margin: 0;
 }
+
+/* --------------------------------------------------------------------------
+   FitSport PDF Workout Library — 4 Category Cards & Direct Workouts Grid
+   -------------------------------------------------------------------------- */
+.workout-categories-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 8px;
+}
+
+@media (max-width: 1100px) {
+  .workout-categories-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .workout-categories-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.workout-cat-card {
+  background: linear-gradient(180deg, #111713 0%, #0c100d 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 18px 18px 14px 18px;
+  cursor: pointer;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.workout-cat-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: transparent;
+  transition: background 0.28s ease;
+}
+
+.workout-cat-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(34, 197, 94, 0.45);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
+}
+
+.workout-cat-card.active {
+  background: linear-gradient(180deg, #16241a 0%, #0d1510 100%);
+  border-color: var(--green-primary);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.25);
+}
+
+.workout-cat-card.active::before {
+  background: var(--green-primary);
+}
+
+.workout-cat-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.cat-pill {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.pill-no-equip {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.pill-equip {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.cat-badge-level {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--green-primary);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.cat-badge-level.level-adv {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.workout-cat-card-title {
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 6px 0;
+}
+
+.workout-cat-card-sub {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.35;
+  margin: 0 0 14px 0;
+  flex-grow: 1;
+}
+
+.workout-cat-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.78rem;
+}
+
+.cat-count {
+  font-weight: 700;
+  color: #e5e7eb;
+}
+
+.cat-burn-range {
+  color: var(--green-primary);
+  font-weight: 700;
+}
+
+.cat-active-indicator {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  transition: color 0.2s ease;
+}
+
+.workout-cat-card.active .cat-active-indicator {
+  color: var(--green-primary);
+}
+
+/* Direct Workouts Header & Grid */
+.direct-workouts-container {
+  background: rgba(10, 14, 11, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.direct-workouts-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.category-indicator-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--green-primary);
+  box-shadow: 0 0 8px var(--green-primary);
+}
+
+.direct-workouts-title {
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  margin: 0;
+}
+
+.direct-workouts-desc {
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+  margin: 4px 0 0 0;
+}
+
+.direct-workouts-filters-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.workout-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.workout-search-wrap svg {
+  position: absolute;
+  left: 12px;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.workout-search-wrap input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 8px 12px 8px 36px;
+  color: #ffffff;
+  font-size: 0.85rem;
+  min-width: 240px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.workout-search-wrap input:focus {
+  border-color: var(--green-primary);
+}
+
+.workout-select-filter {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #ffffff;
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.workout-select-filter option {
+  background: #111412;
+  color: #ffffff;
+}
+
+/* Direct Workout Cards Grid */
+.direct-workouts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 18px;
+}
+
+@media (max-width: 480px) {
+  .direct-workouts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.direct-workout-card {
+  background: linear-gradient(180deg, #121714 0%, #0d110f 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.22s ease;
+  position: relative;
+}
+
+.direct-workout-card:hover {
+  border-color: rgba(34, 197, 94, 0.45);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+}
+
+.direct-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.direct-card-index {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.direct-card-calories {
+  text-align: right;
+}
+
+.direct-card-kcal {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--green-primary);
+}
+
+.direct-card-kcal-sub {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+}
+
+.direct-card-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 6px 0;
+  line-height: 1.3;
+}
+
+.direct-card-muscles {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.direct-card-muscles strong {
+  color: #e5e7eb;
+}
+
+.direct-card-meta-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.direct-meta-chip {
+  font-size: 0.74rem;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: #d1d5db;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.direct-meta-chip.chip-target {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.22);
+  color: #86efac;
+  font-weight: 600;
+}
+
+.direct-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.direct-btn-start {
+  flex: 1.2;
+  background: linear-gradient(135deg, #1fb622 0%, #158017 100%);
+  color: #060606;
+  font-weight: 800;
+  font-size: 0.82rem;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.direct-btn-start:hover {
+  box-shadow: 0 0 14px rgba(31, 182, 34, 0.45);
+  transform: translateY(-1px);
+}
+
+.direct-btn-details {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  color: #e5e7eb;
+  font-weight: 600;
+  font-size: 0.82rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 9px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.direct-btn-details:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}

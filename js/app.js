@@ -1603,147 +1603,214 @@ class FitSportApp {
   }
 
   renderWorkoutsCategories() {
-    const homeMount = document.getElementById("homeWorkoutsGrid");
-    const equipMount = document.getElementById("equipmentWorkoutsGrid");
-    const circuitsMount = document.getElementById("circuitsWorkoutsGrid");
-    if (!homeMount || !equipMount) return;
+    const directMount = document.getElementById("directWorkoutsMount");
+    const catCardsGrid = document.getElementById("workoutCategoryCardsGrid");
+    if (!directMount) return;
 
-    // Featured image workouts (matching reference UI)
-    const homeFeatured = WORKOUT_CATEGORIES.filter(w => w.category === "Home Workouts" && w.image);
-    const equipFeatured = WORKOUT_CATEGORIES.filter(w => w.category === "Equipment Workouts" && w.image);
-    const circuitsList = WORKOUT_CATEGORIES.filter(w => w.subCategory === "30-Min Circuit");
-
-    // Initialize active selected workout to first one (Full Body Beginner) if not set
-    if (!this.selectedShowcaseWorkout) {
-      this.selectedShowcaseWorkout = homeFeatured[0] || WORKOUT_CATEGORIES[0];
+    // Default category if none active
+    if (!this._activeWorkoutCategoryKey) {
+      this._activeWorkoutCategoryKey = "basic-no-equip";
     }
 
-    const renderPhotoCard = (w) => `
-      <div class="workout-photo-card ${(this.selectedShowcaseWorkout && this.selectedShowcaseWorkout.id === w.id) ? 'selected' : ''}" data-id="${w.id}">
-        <div class="workout-card-img-wrap">
-          <img src="${w.image || 'images/workouts/workout_pushups_hd.jpg'}" alt="${w.title}" loading="lazy" onerror="this.src='images/workouts/workout_pushups_hd.jpg'" />
-          <div class="workout-card-overlay"></div>
-        </div>
-        <div class="workout-card-body">
-          <div class="workout-card-title">${w.title}</div>
-          <div class="workout-card-footer-row">
-            <div class="workout-card-stats">
-              <div class="workout-meta-inline">
-                <span>⏱ ${w.duration} min</span>
-                <span>🔥 ${w.calories} kcal</span>
-              </div>
-              <div style="margin-top: 4px;">
-                <span class="${w.level === 'Advanced' ? 'badge-level-advanced' : 'badge-level-beginner'}">${w.level || 'Beginner'}</span>
-              </div>
-            </div>
-            <div class="workout-mini-figure">
-              ${this.getMiniMuscleSvg(w.targetMuscles || [])}
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    const renderCircuitCard = (w) => `
-      <div class="workout-card" data-id="${w.id}">
-        <div>
-          <div class="workout-badge-row">
-            <span class="badge-tag">${w.subCategory || 'Circuit'}</span>
-            <span style="font-family: var(--font-display); font-weight: 700; color: var(--green-primary);">${w.calories} kcal</span>
-          </div>
-          <h3 style="font-size: 1.15rem; margin: 10px 0 6px 0;">${w.title}</h3>
-          <p style="font-size: 0.85rem; line-height: 1.4;">${w.description}</p>
-        </div>
-        <div>
-          <div class="workout-meta-chips" style="margin-bottom: 12px;">
-            <span class="meta-chip">⏱️ ${w.duration} min</span>
-            <span class="meta-chip">⚡ ${w.intensity}</span>
-            <span class="meta-chip">📋 ${w.exercisesCount} Exercises</span>
-          </div>
-          <button type="button" class="btn btn-secondary btn-sm" style="width: 100%;">View Routine & Start →</button>
-        </div>
-      </div>
-    `;
-
-    const filterCards = (list, levelFilter) => {
-      if (!levelFilter || levelFilter === 'all') return list;
-      return list.filter(w => (w.level || '').toLowerCase() === levelFilter.toLowerCase());
+    const categoryMeta = {
+      "basic-no-equip": {
+        title: "HOME — BASIC — NO EQUIPMENT",
+        desc: "Showing 15 foundational bodyweight exercises from FitSport PDF Page 1. Click 'Start Workout' to begin or 'View Form' for sets & reps.",
+        filter: (w) => w.sectionKey === "basic-no-equip" || (w.level === "Basic" && (w.category === "Without Equipment" || w.category === "Home Workouts"))
+      },
+      "adv-no-equip": {
+        title: "HOME — ADVANCED — NO EQUIPMENT",
+        desc: "Showing 15 advanced bodyweight & plyometric exercises from FitSport PDF Page 2. High intensity & elevated calorie expenditure.",
+        filter: (w) => w.sectionKey === "adv-no-equip" || (w.level === "Advanced" && (w.category === "Without Equipment" || w.category === "Home Workouts"))
+      },
+      "basic-equip": {
+        title: "HOME — BASIC — WITH EQUIPMENT",
+        desc: "Showing 15 foundational dumbbell, band & kettlebell exercises from FitSport PDF Page 3. Clean strength building with minimal home gear.",
+        filter: (w) => w.sectionKey === "basic-equip" || (w.level === "Basic" && (w.category === "With Equipment" || w.category === "Equipment Workouts"))
+      },
+      "adv-equip": {
+        title: "HOME — ADVANCED — WITH EQUIPMENT",
+        desc: "Showing 15 high-burn compound lifts, thrusters, pull-ups & carries from FitSport PDF Page 4. Peak power & metabolic conditioning.",
+        filter: (w) => w.sectionKey === "adv-equip" || (w.level === "Advanced" && (w.category === "With Equipment" || w.category === "Equipment Workouts"))
+      }
     };
 
-    const bindCardClicks = () => {
-      document.querySelectorAll(".workout-photo-card").forEach(card => {
-        card.addEventListener("click", () => {
-          const id = card.getAttribute("data-id");
-          const w = WORKOUT_CATEGORIES.find(x => x.id === id);
-          if (w) {
-            this.updateWorkoutShowcase(w);
-          }
+    // User weight for dynamic MET calculation display
+    const userWeight = (appState && appState.state && appState.state.user && appState.state.user.currentWeight) 
+      ? Number(appState.state.user.currentWeight) 
+      : 70;
+    
+    const weightDisplay = document.getElementById("workoutUserWeightDisplay");
+    if (weightDisplay) weightDisplay.textContent = `${userWeight} kg`;
+
+    // Render direct workouts list for the active category
+    const renderDirectList = () => {
+      const activeMeta = categoryMeta[this._activeWorkoutCategoryKey] || categoryMeta["basic-no-equip"];
+      
+      // Update section headers
+      const titleEl = document.getElementById("activeCategorySectionTitle");
+      const descEl = document.getElementById("activeCategorySectionDesc");
+      if (titleEl) titleEl.textContent = activeMeta.title;
+      if (descEl) descEl.textContent = activeMeta.desc;
+
+      // Update category cards active states
+      document.querySelectorAll(".workout-cat-card").forEach(card => {
+        const key = card.getAttribute("data-category-key");
+        if (key === this._activeWorkoutCategoryKey) {
+          card.classList.add("active");
+          const ind = card.querySelector(".cat-active-indicator");
+          if (ind) ind.textContent = "Currently Viewing ↓";
+        } else {
+          card.classList.remove("active");
+          const ind = card.querySelector(".cat-active-indicator");
+          if (ind) ind.textContent = "Click to View Workouts";
+        }
+      });
+
+      // Filter catalog
+      let list = WORKOUT_CATEGORIES.filter(activeMeta.filter);
+
+      // Apply Search Filter
+      const searchVal = (this._directWorkoutSearchQuery || "").trim().toLowerCase();
+      if (searchVal) {
+        list = list.filter(w => 
+          (w.title && w.title.toLowerCase().includes(searchVal)) ||
+          (w.name && w.name.toLowerCase().includes(searchVal)) ||
+          (w.targetMuscles && w.targetMuscles.some(m => m.toLowerCase().includes(searchVal))) ||
+          (w.equipmentNeeded && w.equipmentNeeded.toLowerCase().includes(searchVal))
+        );
+      }
+
+      // Apply Muscle Group Filter
+      const muscleVal = this._directWorkoutMuscleFilter || "all";
+      if (muscleVal !== "all") {
+        list = list.filter(w => {
+          const muscles = (w.targetMuscles || []).map(m => m.toLowerCase()).join(" ");
+          return muscles.includes(muscleVal);
+        });
+      }
+
+      if (list.length === 0) {
+        directMount.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 48px 20px; background: rgba(0,0,0,0.25); border-radius: 12px; border: 1px dashed var(--border-subtle);">
+            <div style="font-size: 2rem; margin-bottom: 8px;">🔍</div>
+            <h3 style="font-size: 1.1rem; color: #fff;">No workouts match your search</h3>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">Try clearing your search query or selecting 'All Muscle Groups'.</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Render cards
+      directMount.innerHTML = list.map((w, idx) => {
+        // Dynamic calories for user weight (Page 5 formula)
+        const dynamicKcal = Math.round(w.calories * (userWeight / 70));
+        const setsReps = w.setsReps || (w.exercises && w.exercises[0] ? `${w.exercises[0].sets} × ${w.exercises[0].reps}` : "3 × 10–15");
+        const musclesList = Array.isArray(w.targetMuscles) ? w.targetMuscles.join(", ") : (w.targetMuscles || "Full Body");
+
+        return `
+          <div class="direct-workout-card" data-id="${w.id}">
+            <div>
+              <div class="direct-card-top">
+                <span class="direct-card-index">#${idx + 1} • ${w.level || 'Standard'}</span>
+                <div class="direct-card-calories">
+                  <span class="direct-card-kcal">${dynamicKcal} kcal</span>
+                  <span class="direct-card-kcal-sub"> / 30 min</span>
+                </div>
+              </div>
+
+              <h3 class="direct-card-title">${w.title || w.name}</h3>
+              <div class="direct-card-muscles">
+                <span>🎯</span>
+                <span>Target: <strong>${musclesList}</strong></span>
+              </div>
+
+              <div class="direct-card-meta-chips">
+                <span class="direct-meta-chip chip-target">⚡ Sets/Reps: ${setsReps}</span>
+                <span class="direct-meta-chip">⏱️ 30 min standard</span>
+                <span class="direct-meta-chip">🎒 ${w.equipmentNeeded || (w.equipmentType || 'No Equipment')}</span>
+              </div>
+            </div>
+
+            <div class="direct-card-actions">
+              <button type="button" class="direct-btn-start" data-action="start" data-id="${w.id}">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <span>Start Workout</span>
+              </button>
+              <button type="button" class="direct-btn-details" data-action="details" data-id="${w.id}">
+                <span>View Form & Details →</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Wire up card action buttons
+      directMount.querySelectorAll("[data-action='start']").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const id = btn.getAttribute("data-id");
+          this.startActiveWorkout(id);
         });
       });
 
-      document.querySelectorAll(".workout-card").forEach(card => {
-        card.addEventListener("click", () => {
-          const id = card.getAttribute("data-id");
+      directMount.querySelectorAll("[data-action='details']").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const id = btn.getAttribute("data-id");
           this.openWorkoutDetails(id);
         });
       });
-    };
 
-    const updateHomeGrid = () => {
-      const list = filterCards(homeFeatured, this._homeFilterLevel);
-      homeMount.innerHTML = list.map(renderPhotoCard).join('');
-      bindCardClicks();
-    };
-
-    const updateEquipGrid = () => {
-      const list = filterCards(equipFeatured, this._equipFilterLevel);
-      equipMount.innerHTML = list.map(renderPhotoCard).join('');
-      bindCardClicks();
-    };
-
-    // Render cards initially
-    updateHomeGrid();
-    updateEquipGrid();
-    if (circuitsMount) {
-      circuitsMount.innerHTML = circuitsList.map(renderCircuitCard).join('');
-      bindCardClicks();
-    }
-
-    // Populate bottom showcase panel
-    this.updateWorkoutShowcase(this.selectedShowcaseWorkout);
-
-    // Setup pill filters
-    if (!this._workoutPillsBound) {
-      this._workoutPillsBound = true;
-
-      document.querySelectorAll("#homePillsGroup .workout-pill-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const level = btn.getAttribute("data-level");
-          if (this._homeFilterLevel === level) {
-            this._homeFilterLevel = null;
-            btn.classList.remove("active");
-          } else {
-            document.querySelectorAll("#homePillsGroup .workout-pill-btn").forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            this._homeFilterLevel = level;
+      directMount.querySelectorAll(".direct-workout-card").forEach(card => {
+        card.addEventListener("click", (e) => {
+          // If clicked outside buttons, open details
+          if (!e.target.closest("button")) {
+            const id = card.getAttribute("data-id");
+            this.openWorkoutDetails(id);
           }
-          updateHomeGrid();
         });
       });
+    };
 
-      document.querySelectorAll("#equipPillsGroup .workout-pill-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const level = btn.getAttribute("data-level");
-          if (this._equipFilterLevel === level) {
-            this._equipFilterLevel = null;
-            btn.classList.remove("active");
-          } else {
-            document.querySelectorAll("#equipPillsGroup .workout-pill-btn").forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            this._equipFilterLevel = level;
+    // Initial render of workouts directly
+    renderDirectList();
+
+    // Category Selector Card Clicks
+    if (catCardsGrid && !this._workoutCatCardsBound) {
+      this._workoutCatCardsBound = true;
+      catCardsGrid.querySelectorAll(".workout-cat-card").forEach(card => {
+        card.addEventListener("click", () => {
+          const key = card.getAttribute("data-category-key");
+          if (key && key !== this._activeWorkoutCategoryKey) {
+            this._activeWorkoutCategoryKey = key;
+            renderDirectList();
+            // Smoothly scroll to the direct workouts container
+            const container = document.querySelector(".direct-workouts-container");
+            if (container) {
+              container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
           }
-          updateEquipGrid();
         });
+      });
+    }
+
+    // Search and Muscle Filter inputs
+    const searchInput = document.getElementById("directWorkoutSearch");
+    if (searchInput && !this._workoutSearchBound) {
+      this._workoutSearchBound = true;
+      searchInput.addEventListener("input", (e) => {
+        this._directWorkoutSearchQuery = e.target.value;
+        renderDirectList();
+      });
+    }
+
+    const muscleFilter = document.getElementById("directWorkoutMuscleFilter");
+    if (muscleFilter && !this._workoutMuscleFilterBound) {
+      this._workoutMuscleFilterBound = true;
+      muscleFilter.addEventListener("change", (e) => {
+        this._directWorkoutMuscleFilter = e.target.value;
+        renderDirectList();
       });
     }
   }
@@ -1849,12 +1916,16 @@ class FitSportApp {
     clearInterval(this.activeWorkoutTimer);
     const workout = this.activeWorkoutObj || WORKOUT_CATEGORIES[0];
     const durationActual = Math.max(1, Math.round(this.workoutSeconds / 60));
+    const userWeight = (appState && appState.state && appState.state.user && appState.state.user.currentWeight) 
+      ? Number(appState.state.user.currentWeight) 
+      : 70;
+    const dynamicBurned = Math.max(10, Math.round(workout.calories * (userWeight / 70) * (durationActual / 30)));
 
-    appState.completeWorkout(workout.id, durationActual);
+    appState.completeWorkout(workout.id, durationActual, dynamicBurned);
 
     document.getElementById("wCompletedTitle").textContent = workout.title;
-    document.getElementById("wCompletedCalories").textContent = `${workout.calories} kcal`;
-    document.getElementById("wCompletedDuration").textContent = `${durationActual} minutes`;
+    document.getElementById("wCompletedCalories").textContent = `${dynamicBurned} kcal`;
+    document.getElementById("wCompletedDuration").textContent = `${durationActual} minutes (${userWeight}kg dynamic calc)`;
 
     if (typeof aiCoach !== "undefined" && aiCoach.triggerPostWorkoutCheck) {
       aiCoach.triggerPostWorkoutCheck(workout.title || workout.name || "Workout");
