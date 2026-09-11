@@ -1707,7 +1707,6 @@ class FitSportApp {
         const dynamicKcal = Math.round(w.calories * (userWeight / 70));
         const setsReps = w.setsReps || (w.exercises && w.exercises[0] ? `${w.exercises[0].sets} × ${w.exercises[0].reps}` : "3 × 10–15");
         const musclesList = Array.isArray(w.targetMuscles) ? w.targetMuscles.join(", ") : (w.targetMuscles || "Full Body");
-        const customImg = appState.getWorkoutImage(w.id);
 
         return `
           <div class="direct-workout-card" data-id="${w.id}">
@@ -1719,15 +1718,6 @@ class FitSportApp {
                   <span class="direct-card-kcal-sub"> / 30 min</span>
                 </div>
               </div>
-
-              ${customImg ? `
-                <div class="direct-card-image-wrap">
-                  <img src="${customImg}" alt="${w.title || w.name}" loading="lazy" onerror="this.parentElement.style.display='none'" />
-                  <button type="button" class="direct-card-photo-badge" data-action="photo" data-id="${w.id}" title="Change custom photo">
-                    📷 Change
-                  </button>
-                </div>
-              ` : ''}
 
               <h3 class="direct-card-title">${w.title || w.name}</h3>
               <div class="direct-card-muscles">
@@ -1745,13 +1735,10 @@ class FitSportApp {
             <div class="direct-card-actions">
               <button type="button" class="direct-btn-start" data-action="start" data-id="${w.id}">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                <span>Start</span>
+                <span>Start Workout</span>
               </button>
               <button type="button" class="direct-btn-details" data-action="details" data-id="${w.id}">
-                <span>Form →</span>
-              </button>
-              <button type="button" class="direct-btn-photo" data-action="photo" data-id="${w.id}" title="Add or change photo for this workout">
-                <span>📷 ${customImg ? 'Edit Photo' : '+ Photo'}</span>
+                <span>View Form & Details →</span>
               </button>
             </div>
           </div>
@@ -1775,14 +1762,6 @@ class FitSportApp {
         });
       });
 
-      directMount.querySelectorAll("[data-action='photo']").forEach(btn => {
-        btn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const id = btn.getAttribute("data-id");
-          this.openWorkoutImageModal(id);
-        });
-      });
-
       directMount.querySelectorAll(".direct-workout-card").forEach(card => {
         card.addEventListener("click", (e) => {
           // If clicked outside buttons, open details
@@ -1796,7 +1775,6 @@ class FitSportApp {
 
     // Initial render of workouts directly
     renderDirectList();
-    this._reRenderDirectWorkouts = renderDirectList;
 
     // Category Selector Card Clicks
     if (catCardsGrid && !this._workoutCatCardsBound) {
@@ -1835,9 +1813,6 @@ class FitSportApp {
         renderDirectList();
       });
     }
-
-    // Bind image upload modal handlers once
-    this.bindWorkoutImageModal();
   }
 
   openWorkoutDetails(workoutId) {
@@ -1858,44 +1833,6 @@ class FitSportApp {
         variationsBox.style.display = "block";
       } else {
         variationsBox.style.display = "none";
-      }
-    }
-
-    // Custom workout image banner in details screen
-    const existingHero = document.getElementById("wDetailHeroWrap");
-    if (existingHero) existingHero.remove();
-
-    const customImg = appState.getWorkoutImage(workout.id);
-    const detailCard = document.querySelector("#screen-workout-details .card");
-    if (detailCard) {
-      const heroWrap = document.createElement("div");
-      heroWrap.id = "wDetailHeroWrap";
-      heroWrap.style.cssText = "margin-bottom: 20px; border-radius: 12px; overflow: hidden; height: 220px; position: relative; background: #0c100d; border: 1px solid rgba(255,255,255,0.1);";
-      
-      if (customImg) {
-        heroWrap.innerHTML = `
-          <img src="${customImg}" alt="${workout.title}" style="width: 100%; height: 100%; object-fit: cover;" />
-          <button type="button" id="wDetailChangePhotoBtn" class="btn btn-secondary btn-sm" style="position: absolute; bottom: 12px; right: 12px; background: rgba(0,0,0,0.75); border-color: rgba(255,255,255,0.25);">
-            📷 Change Workout Photo
-          </button>
-        `;
-      } else {
-        heroWrap.innerHTML = `
-          <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-secondary); gap: 10px;">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            <button type="button" id="wDetailChangePhotoBtn" class="btn btn-secondary btn-sm" style="background: rgba(34,197,94,0.15); border-color: var(--green-primary); color: #fff;">
-              📷 Upload / Add Workout Photo
-            </button>
-          </div>
-        `;
-      }
-
-      detailCard.insertBefore(heroWrap, detailCard.firstChild);
-      const changeBtn = document.getElementById("wDetailChangePhotoBtn");
-      if (changeBtn) {
-        changeBtn.addEventListener("click", () => {
-          this.openWorkoutImageModal(workout.id);
-        });
       }
     }
 
@@ -1920,140 +1857,6 @@ class FitSportApp {
     }
 
     this.navigateTo("workout-details");
-  }
-
-  openWorkoutImageModal(workoutId) {
-    this._editingWorkoutImageId = workoutId;
-    const workout = WORKOUT_CATEGORIES.find(w => w.id === workoutId);
-    const modal = document.getElementById("workoutImageModal");
-    const subTitle = document.getElementById("workoutImageModalSubtitle");
-    const previewImg = document.getElementById("workoutImagePreviewImg");
-    const placeholder = document.getElementById("workoutImagePreviewPlaceholder");
-    const fileInput = document.getElementById("workoutImageFileInput");
-    const urlInput = document.getElementById("workoutImageUrlInput");
-
-    if (subTitle && workout) {
-      subTitle.textContent = `Set photo for ${workout.title} (${workout.level || 'Home Workout'})`;
-    }
-
-    if (fileInput) fileInput.value = "";
-    const currentImg = appState.getWorkoutImage(workoutId);
-    if (urlInput) urlInput.value = currentImg && currentImg.startsWith("http") ? currentImg : "";
-
-    this._pendingWorkoutImage = currentImg || null;
-
-    if (currentImg && previewImg && placeholder) {
-      previewImg.src = currentImg;
-      previewImg.style.display = "block";
-      placeholder.style.display = "none";
-    } else if (previewImg && placeholder) {
-      previewImg.src = "";
-      previewImg.style.display = "none";
-      placeholder.style.display = "flex";
-    }
-
-    if (modal) {
-      modal.style.display = "flex";
-    }
-  }
-
-  bindWorkoutImageModal() {
-    if (this._workoutImageModalBound) return;
-    this._workoutImageModalBound = true;
-
-    const modal = document.getElementById("workoutImageModal");
-    const closeBtn = document.getElementById("closeWorkoutImageModalBtn");
-    const fileInput = document.getElementById("workoutImageFileInput");
-    const urlInput = document.getElementById("workoutImageUrlInput");
-    const saveBtn = document.getElementById("saveWorkoutImageBtn");
-    const removeBtn = document.getElementById("removeWorkoutImageBtn");
-    const previewImg = document.getElementById("workoutImagePreviewImg");
-    const placeholder = document.getElementById("workoutImagePreviewPlaceholder");
-
-    const closeModal = () => {
-      if (modal) modal.style.display = "none";
-      this._editingWorkoutImageId = null;
-      this._pendingWorkoutImage = null;
-    };
-
-    if (closeBtn) closeBtn.onclick = closeModal;
-    if (modal) {
-      modal.addEventListener("click", (e) => {
-        if (e.target === modal) closeModal();
-      });
-    }
-
-    // Handle Local File Upload via FileReader (Converts to Data URL for instant rendering & persistent localStorage)
-    if (fileInput) {
-      fileInput.addEventListener("change", (e) => {
-        const file = e.target.files && e.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (loadEvent) => {
-            const dataUrl = loadEvent.target.result;
-            this._pendingWorkoutImage = dataUrl;
-            if (previewImg && placeholder) {
-              previewImg.src = dataUrl;
-              previewImg.style.display = "block";
-              placeholder.style.display = "none";
-            }
-          };
-          reader.readAsDataURL(file);
-        }
-      });
-    }
-
-    // Handle URL input preview
-    if (urlInput) {
-      urlInput.addEventListener("input", (e) => {
-        const val = e.target.value.trim();
-        if (val) {
-          this._pendingWorkoutImage = val;
-          if (previewImg && placeholder) {
-            previewImg.src = val;
-            previewImg.style.display = "block";
-            placeholder.style.display = "none";
-          }
-        }
-      });
-    }
-
-    // Save Workout Image
-    if (saveBtn) {
-      saveBtn.onclick = () => {
-        if (!this._editingWorkoutImageId) return;
-        const finalImg = this._pendingWorkoutImage || (urlInput ? urlInput.value.trim() : null);
-        if (!finalImg) {
-          this.showToast("Please choose an image file or paste an image link.");
-          return;
-        }
-
-        appState.setWorkoutImage(this._editingWorkoutImageId, finalImg);
-        this.showToast("Custom workout photo saved successfully!");
-        closeModal();
-
-        // Re-render list and active details
-        if (this._reRenderDirectWorkouts) this._reRenderDirectWorkouts();
-        if (appState.state.selectedWorkoutId === this._editingWorkoutImageId) {
-          this.openWorkoutDetails(this._editingWorkoutImageId);
-        }
-      };
-    }
-
-    // Remove Custom Workout Image
-    if (removeBtn) {
-      removeBtn.onclick = () => {
-        if (!this._editingWorkoutImageId) return;
-        appState.setWorkoutImage(this._editingWorkoutImageId, null);
-        this.showToast("Custom photo removed.");
-        closeModal();
-
-        if (this._reRenderDirectWorkouts) this._reRenderDirectWorkouts();
-        if (appState.state.selectedWorkoutId === this._editingWorkoutImageId) {
-          this.openWorkoutDetails(this._editingWorkoutImageId);
-        }
-      };
-    }
   }
 
   startActiveWorkout(workoutId) {
