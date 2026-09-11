@@ -236,6 +236,147 @@ export class AIAgent {
   async processUserMessage(userMessage, sessionContext = {}) {
     const cleanMsg = String(userMessage || "").trim();
     const lower = cleanMsg.toLowerCase();
+    const cs = sessionContext?.clientState;
+
+    // 0A. DIETARY ADVICE & FEASIBILITY QUERY
+    const isDietaryAdvice = /(?:can|should|could|may)\s+i\s+(?:eat|have|drink|consume|take|grab|order)|(?:what|suggest|recommend)\s+(?:should|can|could)?\s*i\s+(?:eat|have|cook)\s+for\s+(?:dinner|lunch|breakfast|snack)|(?:recommend|suggest)\s+(?:a\s+)?(?:meal|snack|dinner|lunch)/i.test(cleanMsg);
+    if (isDietaryAdvice) {
+      const remainingCals = cs?.nutrition?.remaining?.calories ?? 650;
+      const remainingProt = cs?.nutrition?.remaining?.protein ?? 35;
+      const foodExt = extractFoodFromText(cleanMsg, this.db.nutritionDataset);
+      let reply, spoken;
+      if (foodExt.hasFoods && foodExt.foods.length > 0) {
+        const item = foodExt.foods[0];
+        const itemCals = foodExt.totalCalories || 350;
+        const itemProt = foodExt.totalProtein || 12;
+        if (itemCals <= remainingCals) {
+          reply = `Yes, you can have ${item.name}! A standard serving provides ~${itemCals} kcal and ${itemProt}g protein, which fits comfortably within your remaining budget of ${remainingCals} kcal and ${remainingProt}g protein. Enjoy it mindfully!`;
+          spoken = `Yes, you can have ${item.name}. It fits within your remaining ${remainingCals} calories.`;
+        } else {
+          const excess = itemCals - remainingCals;
+          reply = `A standard serving of ${item.name} (~${itemCals} kcal) exceeds your remaining calorie budget of ${remainingCals} kcal by about ${excess} kcal. Consider having a half portion (~${Math.round(itemCals / 2)} kcal) or pairing it with lean protein to stay on track.`;
+          spoken = `A full serving of ${item.name} exceeds your remaining calories. Consider having a half portion instead.`;
+        }
+      } else {
+        reply = `You have ${remainingCals} kcal and ${remainingProt}g protein remaining today. For your next meal, I recommend high-protein options like grilled chicken breast, paneer, eggs, or Greek yogurt paired with fibrous vegetables and complex carbs.`;
+        spoken = `You have ${remainingCals} calories and ${remainingProt} grams of protein left. I recommend lean protein with vegetables.`;
+      }
+      return {
+        intent: "DIETARY_ADVICE",
+        action: "DIETARY_ADVICE_PROVIDED",
+        text: reply,
+        spokenText: spoken,
+        data: { remainingCals, remainingProt }
+      };
+    }
+
+    // 0B. QUERY MEALS LOGGED TODAY
+    const isQueryMeals = /(?:what\s+(?:did\s+i|have\s+i|meals?\s+did\s+i)\s+(?:eat|have|log|consume)|what\s+(?:did\s+i\s+have|i\s+ate)|what\s+are\s+my\s+meals|list\s+(?:my\s+)?(?:meals|food)|show\s+(?:my\s+)?(?:meals|food)|my\s+meals|food\s+log|what\s+food\s+did\s+i)/i.test(cleanMsg);
+    if (isQueryMeals) {
+      let reply, spoken;
+      if (cs && cs.nutrition) {
+        const nut = cs.nutrition;
+        const meals = nut.allMealsList || [];
+        if (meals.length === 0) {
+          reply = `You haven't logged any meals yet today! You have ${nut.remaining.calories} kcal and ${nut.remaining.protein}g protein remaining in your daily budget. Tell me what you eat anytime!`;
+          spoken = `You haven't logged any meals yet today. You have ${nut.remaining.calories} calories remaining.`;
+        } else {
+          const breakdown = Object.entries(nut.mealsByCategory || {})
+            .filter(([_, items]) => items && items.length > 0)
+            .map(([cat, items]) => {
+              const catCals = items.reduce((s, i) => s + (i.calories || 0), 0);
+              const catProt = items.reduce((s, i) => s + (i.protein || 0), 0);
+              const itemList = items.map(i => `${i.name} (${i.grams}g, ${i.calories} kcal)`).join(', ');
+              return `• ${cat.toUpperCase()} (${catCals} kcal, ${Math.round(catProt * 10) / 10}g protein): ${itemList}`;
+            }).join('\n');
+          reply = `Here are the meals you've logged today:\n${breakdown}\n\nTotal Consumed: ${nut.consumed.calories}/${nut.targets.calories} kcal | Protein: ${nut.consumed.protein}g/${nut.targets.protein}g\nRemaining Budget: ${nut.remaining.calories} kcal, ${nut.remaining.protein}g protein.`;
+          spoken = `Today you logged ${meals.length} items totaling ${nut.consumed.calories} calories and ${nut.consumed.protein} grams of protein. You have ${nut.remaining.calories} calories left.`;
+        }
+      } else {
+        const nut = this.getTodayNutrition();
+        reply = `Today's Consumed Nutrition: ${nut.totals.calories}/${nut.targets.calories} kcal (${nut.percentages.calories}%), Protein: ${nut.totals.protein}g/${nut.targets.protein}g (${nut.percentages.protein}%). Tell me what you eat anytime to record new meals!`;
+        spoken = `You have consumed ${nut.totals.calories} calories and ${nut.totals.protein} grams of protein today.`;
+      }
+      return {
+        intent: "QUERY_MEALS",
+        action: "MEALS_QUERIED",
+        text: reply,
+        spokenText: spoken,
+        data: cs?.nutrition || this.getTodayNutrition()
+      };
+    }
+
+    // 0C. QUERY WORKOUTS DONE TODAY
+    const isQueryWorkouts = /(?:what\s+(?:workout|workouts|exercise|exercises|sports?)\s+did\s+i|did\s+i\s+(?:work\s*out|exercise|train|play)|my\s+workouts?|show\s+(?:my\s+)?workouts?|what\s+sports?\s+did\s+i\s+play)/i.test(cleanMsg);
+    if (isQueryWorkouts) {
+      const workouts = cs?.activity?.workouts || (this.getTodayWorkout() ? [this.getTodayWorkout()] : []);
+      const sports = cs?.activity?.sports || this.getTodaySports() || [];
+      const burned = cs?.activity?.burnedCalories ?? this.db.getCaloriesBurnedToday();
+      let reply, spoken;
+      if (workouts.length === 0 && sports.length === 0) {
+        reply = `You haven't logged any workouts or sports yet today. Total active calories burned: ${burned} kcal. Ready to complete a workout session or play a sport?`;
+        spoken = `No workouts or sports logged yet today. Tell me when you finish a workout or play a sport!`;
+      } else {
+        let details = `Here is your athletic activity for today (Burned: ~${burned} kcal):\n`;
+        if (workouts.length > 0) {
+          details += `• Workouts:\n` + workouts.map(w => `  - ${w.title} (${w.durationMinutes} min, ~${w.caloriesBurned} kcal burned)`).join('\n') + `\n`;
+        }
+        if (sports.length > 0) {
+          details += `• Sports:\n` + sports.map(s => `  - ${s.sport} (${s.durationMinutes} min, ~${s.caloriesBurned} kcal burned)`).join('\n');
+        }
+        reply = details.trim();
+        spoken = `Today you logged ${workouts.length} workout and ${sports.length} sport session, burning approximately ${burned} calories. Great work!`;
+      }
+      return {
+        intent: "QUERY_WORKOUTS",
+        action: "WORKOUTS_QUERIED",
+        text: reply,
+        spokenText: spoken,
+        data: { workouts, sports, burned }
+      };
+    }
+
+    // 0D. QUERY REMAINING CALORIES & PROTEIN
+    const isRemainingCals = /(?:how\s+(?:many|much)\s+)?(?:calories|cals|protein|carbs|fat|macros?)\s*(?:do\s+i\s+have\s+)?left\b|(?:remaining|leftover)\s*(?:calories|cals|protein|macros?)|how\s+many\s+(?:more\s+)?calories\s+can\s+i\s+eat|calorie\s+budget\s+left/i.test(cleanMsg);
+    if (isRemainingCals) {
+      const nut = cs?.nutrition || this.getTodayNutrition();
+      const remainingCals = cs?.nutrition?.remaining?.calories ?? Math.max(0, nut.targets.calories - nut.totals.calories);
+      const remainingProt = cs?.nutrition?.remaining?.protein ?? Math.max(0, nut.targets.protein - nut.totals.protein);
+      const consumedCals = cs?.nutrition?.consumed?.calories ?? nut.totals.calories;
+      const targetCals = cs?.nutrition?.targets?.calories ?? nut.targets.calories;
+      let reply, spoken;
+      if (remainingCals > 0) {
+        reply = `Remaining Daily Budget:\n• Calories: ${remainingCals} kcal remaining (Consumed: ${consumedCals}/${targetCals} kcal)\n• Protein: ${remainingProt}g remaining\n\nYou have plenty of room for a nutritious, high-protein meal to hit your target!`;
+        spoken = `You have ${remainingCals} calories and ${remainingProt} grams of protein remaining today.`;
+      } else {
+        reply = `You've achieved your daily calorie goal (${consumedCals}/${targetCals} kcal). If you feel hungry later, prioritize hydration, green salads, or a light zero-calorie beverage.`;
+        spoken = `You have reached your daily calorie target for today. Focus on hydration and recovery!`;
+      }
+      return {
+        intent: "QUERY_CALORIES_REMAINING",
+        action: "CALORIES_REMAINING_QUERIED",
+        text: reply,
+        spokenText: spoken,
+        data: { remainingCals, remainingProt }
+      };
+    }
+
+    // 0E. CHECK HYDRATION
+    const isCheckHydration = /(?:how\s+is\s+my|check\s+my|how\s+much\s+water\s+did\s+i|did\s+i\s+drink\s+enough|water\s+status|water\s+intake\s+today)\s*(?:hydration|water)?/i.test(cleanMsg);
+    if (isCheckHydration && !/(?:drank|drink|consumed|log|add)\s+\d+/i.test(cleanMsg)) {
+      const water = cs?.hydration ? { totalMl: cs.hydration.consumedMl, targetMl: cs.hydration.targetMl, percent: cs.hydration.percent } : this.getWaterIntake();
+      const remainingMl = Math.max(0, water.targetMl - water.totalMl);
+      const reply = `Hydration Status:\n• Total Drank: ${(water.totalMl / 1000).toFixed(2)}L / ${(water.targetMl / 1000).toFixed(1)}L (${water.percent}% of daily goal)\n` +
+        (remainingMl > 0 ? `• Remaining: ${(remainingMl / 1000).toFixed(2)}L left to drink today. Keep sipping water regularly!` : `• Goal achieved! Excellent cellular hydration today!`);
+      const spoken = `You have consumed ${(water.totalMl / 1000).toFixed(2)} liters of water today, which is ${water.percent} percent of your daily target.`;
+      return {
+        intent: "CHECK_HYDRATION",
+        action: "HYDRATION_CHECKED",
+        text: reply,
+        spokenText: spoken,
+        data: water
+      };
+    }
 
     // 1. MEAL LOGGING INTENT (Extract foods & quantities)
     const foodExtraction = extractFoodFromText(cleanMsg, this.db.nutritionDataset);

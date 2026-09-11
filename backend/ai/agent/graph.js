@@ -4,6 +4,7 @@ import { llmService } from '../services/LLMService.js';
 import { aiContextService } from '../services/AIContextService.js';
 import { voiceService } from '../services/VoiceService.js';
 import { recommendationService } from '../services/RecommendationService.js';
+import { extractFoodFromText } from '../../data/aiKnowledge.js';
 import { MAX_AGENT_STEPS } from './state.js';
 
 export class FitSportAgentGraph {
@@ -23,6 +24,9 @@ export class FitSportAgentGraph {
 
     if (sessionContext && sessionContext.missingInformation) {
       session.missingInformation = sessionContext.missingInformation;
+    }
+    if (sessionContext && sessionContext.clientState) {
+      session.clientState = sessionContext.clientState;
     }
     session.actionStatus = "PROCESSING";
 
@@ -302,36 +306,50 @@ export class FitSportAgentGraph {
     else if (detection.intent === 'DAILY_SUMMARY') {
       session.incrementStep();
       session.actionStatus = "ANALYZING";
-      const nut = this.tools.getTodayNutrition(userId);
-      const water = this.tools.getWaterIntake(userId);
-      const workout = this.tools.getTodayWorkout(userId);
-      const sports = this.tools.getTodaySports(userId);
-      const weight = this.tools.getWeightProgress(userId);
-      const daily = this.tools.getDailyProgress(userId);
-      const user = this.tools.getUserProfile(userId);
 
-      const sportText = sports.length > 0
-        ? sports.map(s => `${s.sport} (${s.durationMinutes} min)`).join(', ')
-        : "None logged yet";
+      const cs = session.clientState;
+      const nut = cs?.nutrition?.consumed
+        ? {
+            totals: cs.nutrition.consumed,
+            targets: cs.nutrition.targets,
+            percentages: {
+              calories: Math.round((cs.nutrition.consumed.calories / (cs.nutrition.targets.calories || 1)) * 100),
+              protein: Math.round((cs.nutrition.consumed.protein / (cs.nutrition.targets.protein || 1)) * 100)
+            }
+          }
+        : this.tools.getTodayNutrition(userId);
+
+      const water = cs?.hydration
+        ? { totalMl: cs.hydration.consumedMl, targetMl: cs.hydration.targetMl, percent: cs.hydration.percent }
+        : this.tools.getWaterIntake(userId);
+
+      const workouts = cs?.activity?.workouts || (this.tools.getTodayWorkout(userId) ? [this.tools.getTodayWorkout(userId)] : []);
+      const sports = cs?.activity?.sports || this.tools.getTodaySports(userId) || [];
+      const burned = cs?.activity?.burnedCalories ?? this.tools.db.getCaloriesBurnedToday();
+      const weight = this.tools.getWeightProgress(userId);
+      const user = cs?.athlete || this.tools.getUserProfile(userId);
+
+      const workoutText = workouts.length > 0 ? workouts.map(w => w.title).join(', ') : 'No workouts logged yet';
+      const sportText = sports.length > 0 ? sports.map(s => `${s.sport} (${s.durationMinutes} min)`).join(', ') : 'None logged yet';
 
       replyText = `Here is your Daily Progress Summary, ${user.name.split(' ')[0]}:\n` +
         `• Nutrition: ${nut.totals.calories}/${nut.targets.calories} kcal (${nut.percentages.calories}%) | Protein: ${nut.totals.protein}g/${nut.targets.protein}g (${nut.percentages.protein}%)\n` +
         `• Hydration: ${(water.totalMl / 1000).toFixed(2)}L / ${(water.targetMl / 1000).toFixed(1)}L (${water.percent}%)\n` +
-        `• Workout: ${workout ? `Completed ${workout.title}` : 'No workout completed today'}\n` +
+        `• Workout: ${workoutText}\n` +
         `• Sports: ${sportText}\n` +
-        `• Caloric Burn: ${daily.caloriesBurned} kcal\n` +
-        `• Weight: Current ${weight.current} kg towards target ${weight.target} kg (${weight.progressPercent}% of journey).`;
+        `• Caloric Burn: ${burned} kcal\n` +
+        `• Weight: Current ${user.currentWeight || weight.current} kg towards target ${user.targetWeight || weight.target} kg.`;
 
       spokenText = `Here's your summary: You have consumed ${nut.totals.calories} calories and ${nut.totals.protein} grams of protein today. ` +
         `Hydration is at ${(water.totalMl / 1000).toFixed(2)} liters. ` +
-        `${workout ? `Workout ${workout.title} completed. ` : ''}` +
+        `${workouts.length > 0 ? `Completed ${workouts[0].title}. ` : ''}` +
         `Keep staying consistent!`;
 
       actions.push({
         type: "DAILY_PROGRESS_RETRIEVED",
-        data: { nut, water, workout, sports, weight, daily }
+        data: { nut, water, workouts, sports, weight, burned }
       });
-    } else if (detection.intent === 'CHECK_PROGRESS' && detection.entities.scope === 'weekly') {
+    } else if (detection.intent === 'CHECK_PROGRESS' && detection.entities?.scope === 'weekly') {
       session.incrementStep();
       session.actionStatus = "ANALYZING";
       const week = recommendationService.generateWeeklyAnalysis(userId);
@@ -340,15 +358,224 @@ export class FitSportAgentGraph {
       actions.push({ type: "WEEKLY_ANALYSIS", data: week });
     }
 
-    // --- Branch J: Nutrition Check ---
+    // --- Branch J: Query Meals Eaten Today ---
+    else if (detection.intent === 'QUERY_MEALS') {
+      session.incrementStep();
+      session.actionStatus = "ANALYZING";
+
+      if (detection.directAnswer) {
+        replyText = detection.directAnswer;
+        spokenText = detection.directAnswer;
+      } else {
+        const cs = session.clientState;
+        if (cs && cs.nutrition) {
+          const nut = cs.nutrition;
+          const meals = nut.allMealsList || [];
+          if (meals.length === 0) {
+            replyText = `You haven't logged any meals yet today! You have ${nut.remaining.calories} kcal and ${nut.remaining.protein}g protein remaining in your daily budget. Tell me what you eat anytime!`;
+            spokenText = `You haven't logged any meals yet today. You have ${nut.remaining.calories} calories remaining.`;
+          } else {
+            const breakdown = Object.entries(nut.mealsByCategory || {})
+              .filter(([_, items]) => items && items.length > 0)
+              .map(([cat, items]) => {
+                const catCals = items.reduce((s, i) => s + (i.calories || 0), 0);
+                const catProt = items.reduce((s, i) => s + (i.protein || 0), 0);
+                const itemList = items.map(i => `${i.name} (${i.grams}g, ${i.calories} kcal, ${i.protein}g protein)`).join(', ');
+                return `• ${cat.toUpperCase()} (${catCals} kcal, ${Math.round(catProt * 10) / 10}g protein): ${itemList}`;
+              }).join('\n');
+
+            replyText = `Here are the meals you've logged today:\n${breakdown}\n\n` +
+              `Total Consumed: ${nut.consumed.calories}/${nut.targets.calories} kcal | Protein: ${nut.consumed.protein}g/${nut.targets.protein}g\n` +
+              `Remaining Budget: ${nut.remaining.calories} kcal, ${nut.remaining.protein}g protein.`;
+            spokenText = `Today you logged ${meals.length} items totaling ${nut.consumed.calories} calories and ${nut.consumed.protein} grams of protein. You have ${nut.remaining.calories} calories left.`;
+          }
+        } else {
+          const mealsStore = this.tools.getMealHistory(userId);
+          const nutTotals = this.tools.getTodayNutrition(userId);
+          const allItems = [];
+          for (const [cat, list] of Object.entries(mealsStore || {})) {
+            if (Array.isArray(list)) list.forEach(i => allItems.push({ cat, ...i }));
+          }
+          if (allItems.length === 0) {
+            replyText = `No meals logged yet today! Tell me what you ate (e.g. "I had 2 eggs and toast for breakfast").`;
+            spokenText = `No meals logged yet today. Tell me what you ate anytime!`;
+          } else {
+            const itemsText = allItems.map(i => `${i.name} (${i.grams}g, ${i.calories} kcal)`).join(', ');
+            replyText = `Today you logged: ${itemsText}. Total: ${nutTotals.totals.calories} kcal and ${nutTotals.totals.protein}g protein.`;
+            spokenText = `You have logged ${allItems.length} items totaling ${nutTotals.totals.calories} calories.`;
+          }
+        }
+      }
+      actions.push({ type: "MEALS_QUERIED" });
+    }
+
+    // --- Branch K: Query Workouts & Exercise Done Today ---
+    else if (detection.intent === 'QUERY_WORKOUTS') {
+      session.incrementStep();
+      session.actionStatus = "ANALYZING";
+
+      if (detection.directAnswer) {
+        replyText = detection.directAnswer;
+        spokenText = detection.directAnswer;
+      } else {
+        const cs = session.clientState;
+        const workouts = cs?.activity?.workouts || (this.tools.getTodayWorkout(userId) ? [this.tools.getTodayWorkout(userId)] : []);
+        const sports = cs?.activity?.sports || this.tools.getTodaySports(userId) || [];
+        const burned = cs?.activity?.burnedCalories ?? this.tools.db.getCaloriesBurnedToday();
+
+        if (workouts.length === 0 && sports.length === 0) {
+          replyText = `You haven't logged any workouts or sports yet today. Total active calories burned: ${burned} kcal. Ready to complete a workout session or play a sport?`;
+          spokenText = `No workouts or sports logged yet today. Tell me when you finish a workout or play a sport!`;
+        } else {
+          let details = `Here is your athletic activity for today (Burned: ~${burned} kcal):\n`;
+          if (workouts.length > 0) {
+            details += `• Workouts:\n` + workouts.map(w => `  - ${w.title} (${w.durationMinutes} min, ~${w.caloriesBurned} kcal burned, muscles: ${(w.muscles || []).join(', ') || 'General'})`).join('\n') + `\n`;
+          }
+          if (sports.length > 0) {
+            details += `• Sports:\n` + sports.map(s => `  - ${s.sport} (${s.durationMinutes} min, ~${s.caloriesBurned} kcal burned)`).join('\n');
+          }
+          replyText = details.trim();
+          spokenText = `Today you logged ${workouts.length} workout and ${sports.length} sport session, burning approximately ${burned} calories. Great work!`;
+        }
+      }
+      actions.push({ type: "WORKOUTS_QUERIED" });
+    }
+
+    // --- Branch L: Query Remaining Calories & Macros ---
+    else if (detection.intent === 'QUERY_CALORIES_REMAINING') {
+      session.incrementStep();
+      session.actionStatus = "ANALYZING";
+
+      if (detection.directAnswer) {
+        replyText = detection.directAnswer;
+        spokenText = detection.directAnswer;
+      } else {
+        const cs = session.clientState;
+        let remainingCals, remainingProt, remainingCarbs, remainingFat, targetCals, consumedCals;
+
+        if (cs && cs.nutrition) {
+          remainingCals = cs.nutrition.remaining.calories;
+          remainingProt = cs.nutrition.remaining.protein;
+          remainingCarbs = cs.nutrition.remaining.carbs;
+          remainingFat = cs.nutrition.remaining.fat;
+          targetCals = cs.nutrition.targets.calories;
+          consumedCals = cs.nutrition.consumed.calories;
+        } else {
+          const nut = this.tools.getTodayNutrition(userId);
+          targetCals = nut.targets.calories;
+          consumedCals = nut.totals.calories;
+          remainingCals = Math.max(0, targetCals - consumedCals);
+          remainingProt = Math.max(0, Math.round((nut.targets.protein - nut.totals.protein) * 10) / 10);
+          remainingCarbs = Math.max(0, Math.round((nut.targets.carbs - nut.totals.carbs) * 10) / 10);
+          remainingFat = Math.max(0, Math.round((nut.targets.fat - nut.totals.fat) * 10) / 10);
+        }
+
+        if (remainingCals > 0) {
+          replyText = `Remaining Daily Budget:\n` +
+            `• Calories: ${remainingCals} kcal remaining (Consumed: ${consumedCals}/${targetCals} kcal)\n` +
+            `• Protein: ${remainingProt}g remaining\n` +
+            `• Carbs: ${remainingCarbs || 0}g | Fat: ${remainingFat || 0}g\n\n` +
+            `You have plenty of room for a nutritious, high-protein meal to hit your target!`;
+          spokenText = `You have ${remainingCals} calories and ${remainingProt} grams of protein remaining today.`;
+        } else {
+          replyText = `You've achieved your daily calorie goal (${consumedCals}/${targetCals} kcal). ` +
+            `If you feel hungry later, prioritize hydration, green salads, or a light zero-calorie beverage.`;
+          spokenText = `You have reached your daily calorie target for today. Focus on hydration and recovery!`;
+        }
+      }
+      actions.push({ type: "CALORIES_REMAINING_QUERIED" });
+    }
+
+    // --- Branch M: Dietary Advice & Meal Feasibility ---
+    else if (detection.intent === 'DIETARY_ADVICE') {
+      session.incrementStep();
+      session.actionStatus = "ANALYZING";
+
+      if (detection.directAnswer) {
+        replyText = detection.directAnswer;
+        spokenText = detection.directAnswer;
+      } else {
+        const cs = session.clientState;
+        const remainingCals = cs?.nutrition?.remaining?.calories ?? 650;
+        const remainingProt = cs?.nutrition?.remaining?.protein ?? 35;
+
+        // Extract food mentioned
+        const foodExt = extractFoodFromText(userText, this.tools.db.nutritionDataset);
+        if (foodExt.hasFoods && foodExt.foods.length > 0) {
+          const item = foodExt.foods[0];
+          const itemCals = foodExt.totalCalories || 350;
+          const itemProt = foodExt.totalProtein || 12;
+
+          if (itemCals <= remainingCals) {
+            replyText = `Yes, you can have ${item.name}! A standard serving provides ~${itemCals} kcal and ${itemProt}g protein, which fits comfortably within your remaining budget of ${remainingCals} kcal and ${remainingProt}g protein. Enjoy it mindfully!`;
+            spokenText = `Yes, you can have ${item.name}. It fits within your remaining ${remainingCals} calories.`;
+          } else {
+            const excess = itemCals - remainingCals;
+            replyText = `A standard serving of ${item.name} (~${itemCals} kcal) exceeds your remaining calorie budget of ${remainingCals} kcal by about ${excess} kcal. Consider having a half portion (~${Math.round(itemCals / 2)} kcal) or pairing it with lean protein to stay on track.`;
+            spokenText = `A full serving of ${item.name} exceeds your remaining calories. Consider having a half portion instead.`;
+          }
+        } else {
+          replyText = `You have ${remainingCals} kcal and ${remainingProt}g protein remaining today. ` +
+            `For your next meal, I recommend high-protein options like grilled chicken breast, paneer, eggs, or Greek yogurt paired with fibrous vegetables and complex carbs.`;
+          spokenText = `You have ${remainingCals} calories and ${remainingProt} grams of protein left. I recommend lean protein with vegetables.`;
+        }
+      }
+      actions.push({ type: "DIETARY_ADVICE_PROVIDED" });
+    }
+
+    // --- Branch N: Check Hydration ---
+    else if (detection.intent === 'CHECK_HYDRATION') {
+      session.incrementStep();
+      session.actionStatus = "ANALYZING";
+
+      if (detection.directAnswer) {
+        replyText = detection.directAnswer;
+        spokenText = detection.directAnswer;
+      } else {
+        const cs = session.clientState;
+        const consumedMl = cs?.hydration?.consumedMl ?? this.tools.getWaterIntake(userId).totalMl;
+        const targetMl = cs?.hydration?.targetMl ?? this.tools.getUserProfile(userId).waterGoal ?? 3500;
+        const remainingMl = Math.max(0, targetMl - consumedMl);
+        const percent = Math.min(100, Math.round((consumedMl / targetMl) * 100));
+
+        replyText = `Hydration Status:\n` +
+          `• Total Drank: ${(consumedMl / 1000).toFixed(2)}L / ${(targetMl / 1000).toFixed(1)}L (${percent}% of daily goal)\n` +
+          (remainingMl > 0 ? `• Remaining: ${(remainingMl / 1000).toFixed(2)}L left to drink today. Keep sipping water regularly!` : `• Goal achieved! Excellent cellular hydration today!`);
+        spokenText = `You have consumed ${(consumedMl / 1000).toFixed(2)} liters of water today, which is ${percent} percent of your daily target.`;
+      }
+      actions.push({ type: "HYDRATION_CHECKED" });
+    }
+
+    // --- Branch O: Nutrition Check ---
     else if (detection.intent === 'CHECK_NUTRITION') {
       session.incrementStep();
-      const nut = this.tools.getTodayNutrition(userId);
-      replyText = `Today's Nutrition: ${nut.totals.calories}/${nut.targets.calories} kcal (${nut.percentages.calories}%), ` +
-        `Protein: ${nut.totals.protein}g/${nut.targets.protein}g (${nut.percentages.protein}%), ` +
-        `Carbs: ${nut.totals.carbs}g (${nut.percentages.carbs}%), ` +
-        `Fat: ${nut.totals.fat}g (${nut.percentages.fat}%).`;
-      spokenText = `You have consumed ${nut.totals.calories} calories and ${nut.totals.protein} grams of protein today.`;
+      session.actionStatus = "ANALYZING";
+
+      if (detection.directAnswer) {
+        replyText = detection.directAnswer;
+        spokenText = detection.directAnswer;
+      } else {
+        const cs = session.clientState;
+        if (cs && cs.nutrition) {
+          const nut = cs.nutrition;
+          const pctCal = Math.round((nut.consumed.calories / (nut.targets.calories || 1)) * 100);
+          const pctProt = Math.round((nut.consumed.protein / (nut.targets.protein || 1)) * 100);
+          replyText = `Today's Nutrition Breakdown:\n` +
+            `• Calories: ${nut.consumed.calories}/${nut.targets.calories} kcal (${pctCal}%)\n` +
+            `• Protein: ${nut.consumed.protein}g/${nut.targets.protein}g (${pctProt}%)\n` +
+            `• Carbs: ${nut.consumed.carbs}g/${nut.targets.carbs}g\n` +
+            `• Fat: ${nut.consumed.fat}g/${nut.targets.fat}g\n` +
+            `• Remaining: ${nut.remaining.calories} kcal, ${nut.remaining.protein}g protein`;
+          spokenText = `You have consumed ${nut.consumed.calories} calories and ${nut.consumed.protein} grams of protein today.`;
+        } else {
+          const nut = this.tools.getTodayNutrition(userId);
+          replyText = `Today's Nutrition: ${nut.totals.calories}/${nut.targets.calories} kcal (${nut.percentages.calories}%), ` +
+            `Protein: ${nut.totals.protein}g/${nut.targets.protein}g (${nut.percentages.protein}%), ` +
+            `Carbs: ${nut.totals.carbs}g (${nut.percentages.carbs}%), ` +
+            `Fat: ${nut.totals.fat}g (${nut.percentages.fat}%).`;
+          spokenText = `You have consumed ${nut.totals.calories} calories and ${nut.totals.protein} grams of protein today.`;
+        }
+      }
     }
 
     // --- Branch K: General Fitness Query & Advice (Gemini-Powered) ---

@@ -602,16 +602,131 @@ class FitSportAICoach {
     await this.sendToAgent(text);
   }
 
+  /**
+   * Package live client-side user state (nutrition, workouts, water, goals)
+   * so the AI agent has real-time access to the user's active session.
+   */
+  getClientStateSummary() {
+    if (typeof appState === "undefined" || !appState.state) return null;
+
+    const user = appState.state.user || {};
+    const nutTotals = typeof appState.getNutritionTotals === "function"
+      ? appState.getNutritionTotals()
+      : { calories: 0, protein: 0, carbs: 0, fat: 0 };
+    const waterTotal = typeof appState.getWaterTotal === "function"
+      ? appState.getWaterTotal()
+      : 0;
+    const burnedCalories = typeof appState.getCaloriesBurnedToday === "function"
+      ? appState.getCaloriesBurnedToday()
+      : 0;
+
+    const calorieGoal = user.calorieGoal || 2200;
+    const proteinGoal = user.proteinGoal || 130;
+    const carbsGoal = user.carbsGoal || 220;
+    const fatGoal = user.fatGoal || 60;
+    const waterGoal = user.waterGoal || 3500;
+
+    const remainingCalories = Math.max(0, calorieGoal - (nutTotals.calories || 0));
+    const remainingProtein = Math.max(0, Math.round((proteinGoal - (nutTotals.protein || 0)) * 10) / 10);
+    const remainingCarbs = Math.max(0, Math.round((carbsGoal - (nutTotals.carbs || 0)) * 10) / 10);
+    const remainingFat = Math.max(0, Math.round((fatGoal - (nutTotals.fat || 0)) * 10) / 10);
+    const remainingWater = Math.max(0, waterGoal - waterTotal);
+
+    // Group meals and compile a flat list
+    const mealsByCategory = { breakfast: [], lunch: [], dinner: [], snacks: [] };
+    const allMealsList = [];
+    if (appState.state.meals) {
+      for (const cat of ['breakfast', 'lunch', 'dinner', 'snacks']) {
+        const list = appState.state.meals[cat] || [];
+        if (Array.isArray(list)) {
+          mealsByCategory[cat] = list.map(m => ({
+            name: m.name,
+            grams: m.grams || 100,
+            calories: m.calories || 0,
+            protein: m.protein || 0,
+            carbs: m.carbs || 0,
+            fat: m.fat || 0
+          }));
+          list.forEach(m => {
+            allMealsList.push({
+              meal: cat,
+              name: m.name,
+              grams: m.grams || 100,
+              calories: m.calories || 0,
+              protein: m.protein || 0
+            });
+          });
+        }
+      }
+    }
+
+    // Workouts completed today
+    const workouts = (appState.state.workouts || []).map(w => ({
+      title: w.title || w.name || "Workout",
+      durationMinutes: w.durationMinutes || 45,
+      caloriesBurned: w.caloriesBurned || 250,
+      muscles: w.muscles || []
+    }));
+
+    // Sports activities today
+    const sports = (appState.state.sportsActivities || []).map(s => ({
+      sport: s.sport || s.name || "Sport",
+      durationMinutes: s.durationMinutes || 60,
+      caloriesBurned: s.caloriesBurned || 300
+    }));
+
+    return {
+      athlete: {
+        name: user.name || "Athlete",
+        currentWeight: user.currentWeight || 69.5,
+        targetWeight: user.targetWeight || 65,
+        fitnessGoal: user.fitnessGoal || "Athletic Performance & Fitness",
+        calorieGoal,
+        proteinGoal,
+        carbsGoal,
+        fatGoal,
+        waterGoal
+      },
+      nutrition: {
+        consumed: nutTotals,
+        targets: { calories: calorieGoal, protein: proteinGoal, carbs: carbsGoal, fat: fatGoal },
+        remaining: {
+          calories: remainingCalories,
+          protein: remainingProtein,
+          carbs: remainingCarbs,
+          fat: remainingFat
+        },
+        mealsByCategory,
+        allMealsList
+      },
+      hydration: {
+        consumedMl: waterTotal,
+        targetMl: waterGoal,
+        remainingMl: remainingWater,
+        percent: Math.min(100, Math.round((waterTotal / waterGoal) * 100))
+      },
+      activity: {
+        burnedCalories,
+        workouts,
+        sports
+      }
+    };
+  }
+
   async sendToAgent(message) {
     this.updateState("processing");
 
     try {
+      const clientState = this.getClientStateSummary();
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message,
-          sessionContext: this.sessionContext
+          sessionContext: {
+            ...this.sessionContext,
+            clientState
+          }
         })
       });
 

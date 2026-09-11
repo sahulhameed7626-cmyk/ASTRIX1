@@ -63,47 +63,99 @@ export class LLMService {
   async detectWithGemini(clean, sessionContext = {}) {
     if (!this.geminiApiKey) return null;
 
-    const userProfile = db.store?.user || {};
+    const clientState = sessionContext?.clientState || null;
+    const userProfile = clientState?.athlete || db.store?.user || {};
+    const nut = clientState?.nutrition || null;
+    const activity = clientState?.activity || null;
+    const hydration = clientState?.hydration || null;
     const missing = sessionContext?.missingInformation;
 
-    const prompt = `You are FitSport AI Coach, an expert sports performance and clinical nutrition AI assistant.
-Current Athlete Profile:
+    let athleteContext = `Current Athlete Profile:
 - Name: ${userProfile.name || 'Athlete'}
 - Goal: ${userProfile.fitnessGoal || 'Athletic Performance & Fitness'}
-- Calorie Goal: ${userProfile.calorieGoal || 2200} kcal | Protein Goal: ${userProfile.proteinGoal || 130}g
+- Calorie Goal: ${userProfile.calorieGoal || 2200} kcal | Protein Goal: ${userProfile.proteinGoal || 130}g | Water Goal: ${userProfile.waterGoal || 3500}ml`;
+
+    if (nut) {
+      athleteContext += `\n\nToday's Live Nutrition Status:
+- Consumed: ${nut.consumed.calories} kcal, ${nut.consumed.protein}g protein, ${nut.consumed.carbs}g carbs, ${nut.consumed.fat}g fat
+- Remaining Budget: ${nut.remaining.calories} kcal, ${nut.remaining.protein}g protein, ${nut.remaining.carbs}g carbs, ${nut.remaining.fat}g fat
+- Meals Eaten Today:
+${nut.allMealsList && nut.allMealsList.length > 0
+  ? nut.allMealsList.map(m => `  * [${m.meal.toUpperCase()}] ${m.name} (${m.grams}g, ${m.calories} kcal, ${m.protein}g protein)`).join('\n')
+  : '  * None logged yet today'}`;
+    }
+
+    if (activity) {
+      athleteContext += `\n\nToday's Live Activity Status:
+- Active Calories Burned: ${activity.burnedCalories} kcal
+- Completed Workouts Today:
+${activity.workouts && activity.workouts.length > 0
+  ? activity.workouts.map(w => `  * ${w.title} (${w.durationMinutes} min, ~${w.caloriesBurned} kcal burned, muscles: ${(w.muscles || []).join(', ') || 'General'})`).join('\n')
+  : '  * None logged yet today'}
+- Sports Played Today:
+${activity.sports && activity.sports.length > 0
+  ? activity.sports.map(s => `  * ${s.sport} (${s.durationMinutes} min, ~${s.caloriesBurned} kcal burned)`).join('\n')
+  : '  * None played yet today'}`;
+    }
+
+    if (hydration) {
+      athleteContext += `\n\nToday's Live Hydration Status:
+- Water Drank: ${hydration.consumedMl} ml / ${hydration.targetMl} ml (${hydration.percent}%)
+- Remaining Water to Drink: ${hydration.remainingMl} ml`;
+    }
+
+    const prompt = `You are FitSport AI Coach, an expert sports performance and clinical nutrition AI assistant.
+${athleteContext}
 
 User utterance: "${clean}"
 ${missing ? `Pending Context: Athlete was previously asked for the quantity of "${missing.foodName}" in ${missing.mealType}.` : ''}
 
 Classify into exactly ONE of the following intents and return strict JSON:
-1. "ADD_MEAL": User is logging food/meal consumed.
+1. "ADD_MEAL": User is logging food/meal consumed (e.g. "I had 2 boiled eggs and toast").
    Extract:
    - mealType: "breakfast" | "lunch" | "snack" | "dinner"
    - items: array of { "name": string, "quantity": number, "unit": string, "estimatedGrams": number, "calories": number, "protein": number }
    - If user mentioned a food without quantity (e.g. "I had rice") and is NOT answering a pending question, set needsFollowUp: true, followUpQuestion: "How much [food] did you have?".
-2. "ADD_WATER": User drank water (e.g. "drank 750ml water", "2 glasses").
+2. "QUERY_MEALS": User is asking what they ate, what meals they logged today, or their food intake (e.g. "What did I eat today?", "Show my meals").
+   Extract:
+   - directAnswer: Formulate an exact, conversational reply listing every meal and food eaten today and total calories & protein consumed using the live nutrition data above.
+3. "QUERY_WORKOUTS": User is asking what workouts or sports they did today (e.g. "What workouts did I do today?", "Did I exercise today?").
+   Extract:
+   - directAnswer: Formulate an exact, conversational reply listing every workout and sport completed today with duration and calories burned using the live activity data above.
+4. "QUERY_CALORIES_REMAINING": User is asking how many calories or protein they have left for the day (e.g. "How many calories do I have left?", "Remaining protein?").
+   Extract:
+   - directAnswer: State the exact remaining calories and protein from the live data above, and provide a helpful tip on what to eat to hit their target.
+5. "DIETARY_ADVICE": User is asking if they can eat/drink something or asking for meal recommendations (e.g. "Can I eat a chicken burger?", "Can I have pizza tonight?", "What should I eat for dinner?").
+   Extract:
+   - directAnswer: Compare the estimated calories and protein of the requested food/meal against their remaining calorie and protein budget. If it fits, enthusiastically approve and specify a healthy portion. If it exceeds, suggest a smart portion or healthier alternative.
+6. "CHECK_HYDRATION": User is asking about their water intake or hydration (e.g. "How is my hydration?", "Did I drink enough water?").
+   Extract:
+   - directAnswer: State water drank today vs target and remaining water to drink.
+7. "CHECK_NUTRITION": User asks how much calories or protein they consumed today.
+   Extract:
+   - directAnswer: State consumed calories, protein, carbs, and fat vs daily targets.
+8. "ADD_WATER": User drank water (e.g. "drank 750ml water", "2 glasses").
    Extract:
    - amountMl: number (e.g. 750, 500)
-3. "COMPLETE_WORKOUT": User completed a gym/workout session (e.g. "finished my leg workout", "completed chest and back").
+9. "COMPLETE_WORKOUT": User completed a gym/workout session (e.g. "finished my leg workout", "completed chest and back").
    Extract:
    - workoutName: string (e.g. "Leg Workout", "Chest Workout", "HIIT Workout")
-4. "ADD_SPORT": User played a sport, ran, or cycled (e.g. "played football for 1 hour", "ran for 45 mins").
-   Extract:
-   - sport: string (e.g. "Football", "Cricket", "Badminton", "Running", "Cycling")
-   - durationMinutes: number (e.g. 60)
-5. "WORKOUT_SPORT_ANALYSIS": Checking overlap, fatigue, or recovery between a workout and sport (e.g. "Can I play football after leg day?").
-   Extract:
-   - workoutName: string
-   - sportName: string
-6. "CHECK_WEIGHT": User logged or asked about weight (e.g. "My weight is 70.5kg").
-   Extract:
-   - weight: number
-7. "DAILY_SUMMARY": User asks for today's summary, review, or "how am I doing today?".
-8. "CHECK_PROGRESS": User asks for weekly progress or overall review.
-   Extract:
-   - scope: "weekly" | "overall"
-9. "CHECK_NUTRITION": User asks how much calories or protein they consumed today.
-10. "GENERAL_FITNESS_QUESTION": Question about nutrition, exercise, recovery, biomechanics, or friendly greeting.
+10. "ADD_SPORT": User played a sport, ran, or cycled (e.g. "played football for 1 hour", "ran for 45 mins").
+    Extract:
+    - sport: string (e.g. "Football", "Cricket", "Badminton", "Running", "Cycling")
+    - durationMinutes: number (e.g. 60)
+11. "WORKOUT_SPORT_ANALYSIS": Checking overlap, fatigue, or recovery between a workout and sport (e.g. "Can I play football after leg day?").
+    Extract:
+    - workoutName: string
+    - sportName: string
+12. "CHECK_WEIGHT": User logged or asked about weight (e.g. "My weight is 70.5kg").
+    Extract:
+    - weight: number
+13. "DAILY_SUMMARY": User asks for today's summary, review, or "how am I doing today?".
+14. "CHECK_PROGRESS": User asks for weekly progress or overall review.
+    Extract:
+    - scope: "weekly" | "overall"
+15. "GENERAL_FITNESS_QUESTION": Question about nutrition, exercise, recovery, biomechanics, or friendly greeting.
     Extract:
     - directAnswer: string (Concise, motivating, scientifically accurate answer, 2-3 sentences max).
 
@@ -308,6 +360,56 @@ Return JSON only conforming to:
     }
 
     // 2. RESILIENT LOCAL HEURISTIC FALLBACK ENGINE (Offline / Zero-Downtime Guarantee)
+    // Dietary Feasibility & Recommendation Query (e.g. "Can I eat pizza tonight?", "What should I have for dinner?")
+    const isDietaryAdvice = /(?:can|should|could|may)\s+i\s+(?:eat|have|drink|consume|take|grab|order)|(?:what|suggest|recommend)\s+(?:should|can|could)?\s*i\s+(?:eat|have|cook)\s+for\s+(?:dinner|lunch|breakfast|snack)|(?:recommend|suggest)\s+(?:a\s+)?(?:meal|snack|dinner|lunch)/i.test(clean);
+    if (isDietaryAdvice) {
+      return {
+        intent: 'DIETARY_ADVICE',
+        entities: { query: clean },
+        needsFollowUp: false
+      };
+    }
+
+    // Meal Query Intent (e.g. "What did I eat today?", "Show my meals", "What did I have for breakfast?")
+    const isQueryMeals = /(?:what\s+(?:did\s+i|have\s+i|meals?\s+did\s+i)\s+(?:eat|have|log|consume)|what\s+(?:did\s+i\s+have|i\s+ate)|what\s+are\s+my\s+meals|list\s+(?:my\s+)?(?:meals|food)|show\s+(?:my\s+)?(?:meals|food)|my\s+meals|food\s+log|what\s+food\s+did\s+i)/i.test(clean);
+    if (isQueryMeals) {
+      return {
+        intent: 'QUERY_MEALS',
+        entities: {},
+        needsFollowUp: false
+      };
+    }
+
+    // Workout Query Intent (e.g. "What workouts did I do today?", "Did I exercise today?", "What sports did I play?")
+    const isQueryWorkouts = /(?:what\s+(?:workout|workouts|exercise|exercises|sports?)\s+did\s+i|did\s+i\s+(?:work\s*out|exercise|train|play\s+any\s+sports?)|my\s+workouts?|show\s+(?:my\s+)?workouts?|what\s+sports?\s+did\s+i\s+play|workout\s+log|exercise\s+log)/i.test(clean);
+    if (isQueryWorkouts) {
+      return {
+        intent: 'QUERY_WORKOUTS',
+        entities: {},
+        needsFollowUp: false
+      };
+    }
+
+    // Remaining Calories & Macros Query (e.g. "How many calories do I have left?", "Remaining protein?", "Calorie budget left?")
+    const isRemainingCals = /(?:how\s+(?:many|much)\s+)?(?:calories|cals|protein|carbs|fat|macros?)\s*(?:do\s+i\s+have\s+)?left\b|(?:remaining|leftover)\s*(?:calories|cals|protein|macros?)|how\s+many\s+(?:more\s+)?calories\s+can\s+i\s+eat|calorie\s+budget\s+left/i.test(clean);
+    if (isRemainingCals) {
+      return {
+        intent: 'QUERY_CALORIES_REMAINING',
+        entities: {},
+        needsFollowUp: false
+      };
+    }
+
+    // Hydration Status Query (e.g. "How is my hydration?", "Did I drink enough water?", "How much water did I drink?")
+    const isCheckHydration = /(?:how\s+is\s+my|check\s+my|how\s+much\s+water\s+did\s+i|did\s+i\s+drink\s+enough|water\s+status|water\s+intake\s+today)\s*(?:hydration|water)?/i.test(clean);
+    if (isCheckHydration && !/(?:drank|drink|consumed|log|add)\s+\d+/i.test(clean)) {
+      return {
+        intent: 'CHECK_HYDRATION',
+        entities: {},
+        needsFollowUp: false
+      };
+    }
+
     // Water Tracking Intent
     const isWater = /(?:water|hydration)/i.test(clean) || /(?:drank|drink|consumed)\s+\d+/i.test(clean);
     if (isWater) {
@@ -445,7 +547,7 @@ Return JSON only conforming to:
     }
 
     // Nutrition queries
-    if (lower.includes("how much protein") || lower.includes("calories consumed") || lower.includes("what did i eat") || lower.includes("nutrition")) {
+    if (lower.includes("how much protein") || lower.includes("calories consumed") || lower.includes("nutrition summary") || lower.includes("total calories") || lower.includes("my nutrition") || lower.includes("macros today")) {
       return { intent: 'CHECK_NUTRITION', entities: {}, needsFollowUp: false };
     }
 
