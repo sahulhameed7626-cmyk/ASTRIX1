@@ -7,7 +7,8 @@ export function handleWorkoutRoutes(req, res, url, body) {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({
       workouts: WORKOUT_CATEGORIES,
-      completedToday: db.store.workouts
+      completedToday: db.store.workouts,
+      customWorkoutImages: db.store.customWorkoutImages || {}
     }));
   }
 
@@ -51,6 +52,34 @@ export function handleWorkoutRoutes(req, res, url, body) {
       message: "Workout completed and saved to history",
       workout: completedEntry,
       caloriesBurnedToday: db.getCaloriesBurnedToday()
+    }));
+  }
+
+  // POST /api/workouts/image (Upload / Set custom image for workout)
+  if (url.pathname === '/api/workouts/image' && req.method === 'POST') {
+    const { workoutId, imageUrl } = body;
+    if (!workoutId) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: "Missing workoutId" }));
+    }
+
+    if (!db.store.customWorkoutImages) {
+      db.store.customWorkoutImages = {};
+    }
+
+    if (imageUrl) {
+      db.store.customWorkoutImages[workoutId] = imageUrl;
+    } else {
+      delete db.store.customWorkoutImages[workoutId];
+    }
+
+    db.saveStore();
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({
+      success: true,
+      workoutId,
+      imageUrl: imageUrl || null
     }));
   }
 

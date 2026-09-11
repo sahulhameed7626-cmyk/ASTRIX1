@@ -2598,6 +2598,62 @@
     </nav>
   </div>
 
+  <!-- MODAL: UPLOAD / CUSTOMIZE WORKOUT IMAGE -->
+  <div class="modal-overlay" id="workoutImageModal" style="display: none;">
+    <div class="modal-box" style="max-width: 520px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="brand-logo-icon" style="width: 38px; height: 38px; border-radius: 8px; background: var(--green-primary); display: flex; align-items: center; justify-content: center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#060606" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+          <div>
+            <h3 class="card-title" style="margin: 0; font-size: 1.25rem;">Set Workout Photo</h3>
+            <span style="font-size: 0.78rem; color: var(--text-secondary);" id="workoutImageModalSubtitle">Upload or paste an image URL for this workout</span>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="closeWorkoutImageModalBtn" style="padding: 4px 10px;">✕</button>
+      </div>
+
+      <!-- Preview Box -->
+      <div style="margin-bottom: 18px; text-align: center;">
+        <div id="workoutImagePreviewBox" style="width: 100%; height: 210px; border-radius: 12px; overflow: hidden; background: #0c100d; border: 1px solid rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; position: relative;">
+          <img id="workoutImagePreviewImg" src="" alt="Workout Preview" style="width: 100%; height: 100%; object-fit: cover; display: none;" />
+          <div id="workoutImagePreviewPlaceholder" style="color: var(--text-secondary); font-size: 0.88rem; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span>No custom photo set yet</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Option 1: File Upload -->
+      <div class="form-group" style="margin-bottom: 14px;">
+        <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Choose Image From Device (Phone / Computer)</span>
+          <span style="font-size: 0.72rem; color: var(--green-primary); font-weight: 700;">PNG, JPG, WEBP</span>
+        </label>
+        <input type="file" id="workoutImageFileInput" accept="image/*" class="form-input" style="padding: 9px; cursor: pointer;">
+      </div>
+
+      <div style="text-align: center; margin: 10px 0; color: var(--text-secondary); font-size: 0.78rem; font-weight: 700;">— OR PASTE IMAGE LINK —</div>
+
+      <!-- Option 2: Image URL -->
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label class="form-label">Image Web URL (Direct Link)</label>
+        <input type="url" id="workoutImageUrlInput" class="form-input" placeholder="https://images.unsplash.com/... or any image link">
+      </div>
+
+      <!-- Modal Actions -->
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button type="button" class="btn btn-primary btn-lg" id="saveWorkoutImageBtn" style="flex: 1.4;">
+          ✓ Save Workout Image
+        </button>
+        <button type="button" class="btn btn-secondary btn-lg" id="removeWorkoutImageBtn" style="flex: 0.8; border-color: rgba(255, 100, 100, 0.35); color: #ff8888;">
+          Remove
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: EDIT PROFILE / ATHLETE PASSPORT -->
   <div class="modal-overlay" id="editProfileModal">
     <div class="modal-box" style="max-width: 500px;">

@@ -176,7 +176,20 @@
       }
     ],
     "dinner": [],
-    "snacks": []
+    "snacks": [
+      {
+        "id": "m_ai_1789108453949_350",
+        "name": "mango",
+        "category": "Snacks",
+        "grams": 50,
+        "calories": 30,
+        "protein": 0.4,
+        "carbs": 7.5,
+        "fat": 0.2,
+        "fiber": 2,
+        "iron": 0.8
+      }
+    ]
   },
   "waterLogs": [
     {
@@ -280,6 +293,26 @@
       "durationMinutes": 45,
       "caloriesBurned": 280,
       "completedAt": "2026-09-10T19:04:20.447Z"
+    },
+    {
+      "id": "wk_1789108387179",
+      "workoutId": "hw-full-body-beg",
+      "title": "Full Body Beginner",
+      "category": "Home Workouts",
+      "subCategory": "Home Workouts",
+      "duration": 1,
+      "caloriesBurned": 120,
+      "completedAt": "12:03 PM"
+    },
+    {
+      "id": "wk_1789108404111",
+      "workoutId": "hw-full-body-beg",
+      "title": "Full Body Beginner",
+      "category": "Home Workouts",
+      "subCategory": "Home Workouts",
+      "duration": 1,
+      "caloriesBurned": 120,
+      "completedAt": "12:03 PM"
     }
   ],
   "sportsActivities": [
@@ -413,6 +446,39 @@
     }
   ],
   "history": [
+    {
+      "id": "h_ai_1789108453949_895",
+      "type": "meals",
+      "title": "Snacks: mango",
+      "subtitle": "50g • Added via AI Voice Coach",
+      "metric": "30 kcal",
+      "subMetric": "0.4g Protein • 7.5g Carbs",
+      "time": "12:04 PM",
+      "date": "Today",
+      "icon": "apple"
+    },
+    {
+      "id": "h_1789108404111",
+      "type": "workouts",
+      "title": "Workout: Full Body Beginner",
+      "subtitle": "Home Workouts (Home Workouts) completed",
+      "metric": "120 kcal burned",
+      "subMetric": "Duration: 1 min • Completed",
+      "time": "12:03 PM",
+      "date": "Today",
+      "icon": "dumbbell"
+    },
+    {
+      "id": "h_1789108387180",
+      "type": "workouts",
+      "title": "Workout: Full Body Beginner",
+      "subtitle": "Home Workouts (Home Workouts) completed",
+      "metric": "120 kcal burned",
+      "subMetric": "Duration: 1 min • Completed",
+      "time": "12:03 PM",
+      "date": "Today",
+      "icon": "dumbbell"
+    },
     {
       "id": "h_ai_1789099723029_330",
       "type": "meals",

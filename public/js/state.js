@@ -131,6 +131,9 @@ class StateManager {
         if (!parsed.autoResetSchedule) {
           parsed.autoResetSchedule = { enabled: true, time: "00:00", time12: "12:00 AM", lastResetDate: "" };
         }
+        if (!parsed.customWorkoutImages) {
+          parsed.customWorkoutImages = {};
+        }
         return parsed;
       }
     } catch (e) {
@@ -158,6 +161,7 @@ class StateManager {
       selectedSportId: "cycling",
       selectedWorkoutId: "hw-pushups",
       activeWorkoutSession: null,
+      customWorkoutImages: {},
       auth: {
         isLoggedIn: isSessionActive,
         onboardingComplete: true
@@ -303,7 +307,21 @@ class StateManager {
         }
       }
 
-      // 7. Fetch Telegram schedule
+      // 7. Fetch workout images and completion status
+      try {
+        const wkRes = await fetch('/api/workouts');
+        if (wkRes.ok) {
+          const wkData = await wkRes.json();
+          if (wkData.customWorkoutImages) {
+            this.state.customWorkoutImages = {
+              ...wkData.customWorkoutImages,
+              ...(this.state.customWorkoutImages || {})
+            };
+          }
+        }
+      } catch (e) {}
+
+      // 8. Fetch Telegram schedule
       await this.loadTelegramSchedule();
 
       this.saveState();
@@ -676,6 +694,34 @@ class StateManager {
     } catch (e) {
       // fallback
     }
+  }
+
+  setWorkoutImage(workoutId, imageUrl) {
+    if (!this.state.customWorkoutImages) {
+      this.state.customWorkoutImages = {};
+    }
+    if (imageUrl) {
+      this.state.customWorkoutImages[workoutId] = imageUrl;
+    } else {
+      delete this.state.customWorkoutImages[workoutId];
+    }
+    this.saveState();
+
+    try {
+      fetch('/api/workouts/image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workoutId, imageUrl: imageUrl || "" })
+      }).catch(() => {});
+    } catch (e) {}
+  }
+
+  getWorkoutImage(workoutId) {
+    if (this.state && this.state.customWorkoutImages && this.state.customWorkoutImages[workoutId]) {
+      return this.state.customWorkoutImages[workoutId];
+    }
+    const workout = WORKOUT_CATEGORIES.find(w => w.id === workoutId);
+    return (workout && (workout.image || workout.heroImage)) || null;
   }
 
   async toggleReminder(reminderId) {
